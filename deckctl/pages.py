@@ -133,7 +133,10 @@ class ActivePage:
         self.long_press_ms[idx] = int(
             kdef.settings.get("long_press_ms", self.long_press_default_ms)
         )
-        if "long_press_ms" in kdef.settings:
+        # A key opts into the progress-ring animation by declaring either
+        # `long_press_ms` (a hold-to-confirm gate) or `on_long_press` (a
+        # distinct long-press action) in its TOML.
+        if "long_press_ms" in kdef.settings or "on_long_press" in kdef.settings:
             self._long_press_explicit.add(idx)
         w.invalidate = self._invalidator_for(idx, w)
         return idx
@@ -242,10 +245,6 @@ class ActivePage:
             except Exception:
                 log.exception("widget render after release at idx %d", idx)
 
-    # Below this fraction of the threshold no arc is drawn, so a quick
-    # touch-and-release on a long-press key doesn't flash anything.
-    PROGRESS_VISIBLE_AT = 0.25
-
     def _animate_press(self, idx: int, threshold_ms: int, stop: threading.Event) -> None:
         """Push a progress-arc-overlaid frame at ~20Hz while a key is held."""
         push = self._push
@@ -261,11 +260,6 @@ class ActivePage:
         while not stop.is_set():
             elapsed_ms = (time.monotonic() - started) * 1000
             progress = min(1.0, elapsed_ms / threshold_ms)
-            # Don't render the arc until the user has clearly committed to
-            # a hold. Quick taps below this threshold get no visual at all.
-            if progress < self.PROGRESS_VISIBLE_AT:
-                stop.wait(0.05)
-                continue
             # Skip redraw if visually unchanged (within 2% of last frame).
             if abs(progress - last_progress) >= 0.02:
                 last_progress = progress
