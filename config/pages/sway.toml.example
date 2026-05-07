@@ -24,10 +24,19 @@ icon = "view-list-details"
 label = "Stacked"
 on_press = "swaymsg layout stacking"
 
-# Single split key — toggles the parent container's orientation between
-# horizontal and vertical via sway's built-in `split toggle`.
+# Return to a tiled layout from tabbed/stacked. Mirrors the user's
+# $mod+i shortcut (`layout toggle split`).
 [[keys]]
 pos = [3, 0]
+type = "command"
+icon = "border-all"
+label = "Tile"
+on_press = "swaymsg layout toggle split"
+
+# Flip the parent container's split orientation between horizontal and
+# vertical via sway's built-in `split toggle`.
+[[keys]]
+pos = [4, 0]
 type = "command"
 icon = "object-flip-horizontal"
 label = "Split"
