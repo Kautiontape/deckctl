@@ -5,15 +5,26 @@ things we explicitly chose to defer or aren't sure about yet.
 
 ## Research
 
-- [ ] **Feishin playlist control.** No clear MPRIS path. Candidates:
-      - Subsonic API on backing server (probably Navidrome). Cleanest if available.
-      - Feishin CLI args / URI scheme — does it accept `feishin://playlist/<id>`?
-      - Simulated keystrokes via `wtype` (ugly, fragile).
-      Until decided, the Playlists sub-page is a placeholder.
-- [ ] **Feishin "favorite/star" support.** Subsonic API has a `star` endpoint;
-      check if it's wired through Feishin's MPRIS or if we hit Subsonic directly.
-- [ ] **Feishin shuffle/loop via D-Bus.** MPRIS has `Shuffle` and `LoopStatus`
-      properties — verify Feishin honors writes to them.
+- [x] **Feishin shuffle/loop via D-Bus.** Confirmed: Feishin exposes both
+      Shuffle (b, readwrite) and LoopStatus (s, readwrite) on
+      org.mpris.MediaPlayer2.Player. Reactive widgets `mpris_shuffle` and
+      `mpris_loop` read state via PropertiesChanged and write on press.
+- [x] **Feishin star support.** No MPRIS path. Goes via Subsonic API on
+      the backing Navidrome (`/rest/star` and `/rest/unstar` with the
+      Subsonic auth-by-token credential). Credentials auto-extracted from
+      Feishin's IndexedDB / LocalStorage leveldb files; can be overridden
+      via SUBSONIC_URL + SUBSONIC_CRED in secrets.env.
+- [ ] **Feishin playlist control.** No MPRIS Playlists interface
+      (verified: `HasTrackList = false`, no `org.mpris.MediaPlayer2.Playlists`
+      interface in Feishin's introspection). The Subsonic API has
+      `getPlaylists` for listing and `getPlaylist?id=…` for tracks but
+      can't directly tell Feishin to *play* a playlist. Possible paths:
+      - `savePlayQueue` to push a queue server-side; Feishin would need
+        to pick that up via `getPlayQueue`. The `serverPlayQueue` feature
+        flag is in Feishin's saved server features list — worth probing.
+      - Feishin URL scheme (`feishin://`) — needs to be checked; the
+        `OpenUri` MPRIS method exists but isn't documented for Feishin.
+      Until decided, the Playlists sub-page is still a placeholder.
 - [ ] **HA Server-Sent Events** for state subscriptions instead of polling
       after a button press. Nice-to-have once basic HA actions work.
 

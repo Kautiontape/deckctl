@@ -129,17 +129,35 @@ class MprisService:
             except TypeError:
                 return str(v)
 
+        # Optional/extra props — default if the player doesn't expose them.
+        try:
+            shuffle = bool(props.Get(PLAYER_IFACE, "Shuffle"))
+        except dbus.DBusException:
+            shuffle = False
+        try:
+            loop_status = str(props.Get(PLAYER_IFACE, "LoopStatus"))
+        except dbus.DBusException:
+            loop_status = "None"
+
         title = str(meta.get("xesam:title", ""))
         artists = meta.get("xesam:artist", [])
         artist = _first(artists) if artists else ""
         album = str(meta.get("xesam:album", ""))
         art_url = str(meta.get("mpris:artUrl", ""))
+        # mpris:trackid is a D-Bus object path; the last segment is the
+        # backing-server track ID (Subsonic uses this for star calls etc.)
+        trackid_path = str(meta.get("mpris:trackid", ""))
+        track_id = trackid_path.rsplit("/", 1)[-1] if trackid_path else ""
+
         return {
             "title": title,
             "artist": artist,
             "album": album,
             "status": status,
             "art_url": art_url,
+            "shuffle": shuffle,
+            "loop_status": loop_status,
+            "track_id": track_id,
         }
 
     def art(self, url: str) -> Image.Image | None:
@@ -181,6 +199,22 @@ class MprisService:
     def set_loop(self, player_name: str, value: str) -> None:
         # value: "None", "Track", or "Playlist"
         self._set_property(player_name, "LoopStatus", dbus.String(value))
+
+    def cycle_loop(self, player_name: str) -> None:
+        """None → Playlist → Track → None."""
+        s = self.state(player_name)
+        cur = s.get("loop_status", "None") if s else "None"
+        nxt = {"None": "Playlist", "Playlist": "Track", "Track": "None"}.get(cur, "None")
+        self.set_loop(player_name, nxt)
+
+    def raise_player(self, player_name: str) -> None:
+        """Bring the player's window to focus via MPRIS Raise()."""
+        try:
+            obj = self._bus.get_object(PLAYER_PREFIX + player_name, PLAYER_PATH)
+            iface = dbus.Interface(obj, "org.mpris.MediaPlayer2")
+            iface.Raise()
+        except dbus.DBusException:
+            log.exception("mpris: Raise() on %s failed", player_name)
 
     # ─── internals ─────────────────────────────────────────────────────────
 

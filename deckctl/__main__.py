@@ -20,6 +20,7 @@ from .services.marks import MarksService
 from .services.mpris import MprisService, start_glib_loop
 from .services.pipewire import PipewireService
 from .services.producers import AudioSinkProducer, BluezProducer
+from .services.subsonic import SubsonicService
 from .services.sway import SwayService
 
 log = logging.getLogger("deckctl")
@@ -40,6 +41,7 @@ class Daemon:
         self.sway: SwayService | None = None
         self.marks: MarksService | None = None
         self.bluez: BluezService | None = None
+        self.subsonic: SubsonicService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
 
@@ -73,6 +75,15 @@ class Daemon:
         except Exception:
             log.exception("bluez init failed; bluetooth widgets will be inert")
             self.bluez = None
+        self.subsonic = SubsonicService(
+            url=self.secrets.get("SUBSONIC_URL"),
+            credential=self.secrets.get("SUBSONIC_CRED"),
+        )
+        if not self.subsonic.configured:
+            log.info(
+                "subsonic: no credentials in secrets.env and Feishin storage "
+                "didn't yield any either; star button will be inert",
+            )
         deck = DeckHandle(serial=self.cfg.serial)
         deck.set_brightness(self.cfg.brightness)
         deck.set_key_callback(self._on_key)
@@ -126,6 +137,7 @@ class Daemon:
         deps.ha = self.ha
         deps.marks = self.marks
         deps.bluez = self.bluez
+        deps.subsonic = self.subsonic
         producers: dict[str, object] = {}
         if self.pipewire is not None:
             producers["audio_sink"] = AudioSinkProducer(self.pipewire)

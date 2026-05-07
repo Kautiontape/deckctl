@@ -10,28 +10,24 @@ icon = "go-previous"
 label = "Back"
 on_press = "back"
 
+# Open Feishin's window via MPRIS Raise() — bypasses the scratchpad helper
+# and works whether Feishin is currently scratchpadded, minimized, or open.
 [[keys]]
 pos = [1, 0]
-type = "mpris"
-player = "Feishin"
-size = "large"              # render album art at full size, no overlay text
-on_press = "playerctl --player=Feishin play-pause"
+type = "command"
+icon = "music"
+label = "Open"
+on_press = "dbus-send --session --dest=org.mpris.MediaPlayer2.Feishin --type=method_call /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Raise"
 
 [[keys]]
 pos = [2, 0]
-type = "command"
-icon = "media-playlist-repeat"
-label = "Loop"
-# TODO: turn into a `mpris_toggle` widget once we verify Feishin honors
-# LoopStatus writes via D-Bus.
-on_press = "playerctl --player=Feishin loop None"
+type = "mpris_loop"
+player = "Feishin"
 
 [[keys]]
 pos = [3, 0]
-type = "command"
-icon = "media-playlist-shuffle"
-label = "Shuffle"
-on_press = "playerctl --player=Feishin shuffle Toggle"
+type = "mpris_shuffle"
+player = "Feishin"
 
 [[keys]]
 pos = [4, 0]
@@ -40,35 +36,27 @@ target = "playlists"
 icon = "view-list"
 label = "Playlists"
 
-# Row 1
-[[keys]]
-pos = [0, 1]
-type = "command"
-icon = "media-skip-backward"
-on_press = "playerctl --player=Feishin previous"
-
+# Row 1 — Prev / Album-art-as-play-pause / Next centered
 [[keys]]
 pos = [1, 1]
 type = "command"
-icon = "media-playback-start"
-on_press = "playerctl --player=Feishin play-pause"
+icon = "media-skip-backward"
+label = "Prev"
+on_press = "playerctl --player=Feishin previous"
 
 [[keys]]
 pos = [2, 1]
-type = "command"
-icon = "media-skip-forward"
-on_press = "playerctl --player=Feishin next"
+type = "mpris"
+player = "Feishin"
+size = "large"
+# Default press behaviour is play_pause via D-Bus; explicit here for clarity.
 
 [[keys]]
 pos = [3, 1]
-type = "mic_mute"
-
-[[keys]]
-pos = [4, 1]
 type = "command"
-icon = "music"
-label = "Open"
-on_press = "~/.config/sway/bin/sway-scratchpad-launch.sh feishin"
+icon = "media-skip-forward"
+label = "Next"
+on_press = "playerctl --player=Feishin next"
 
 # Row 2
 [[keys]]
@@ -84,9 +72,8 @@ step = 5
 
 [[keys]]
 pos = [2, 2]
-type = "command"
-label = "Title"
-# TODO: track-title text widget. For now, blank.
+type = "mpris_title"
+player = "Feishin"
 
 [[keys]]
 pos = [3, 2]
@@ -96,7 +83,5 @@ step = 5
 
 [[keys]]
 pos = [4, 2]
-type = "command"
-icon = "starred"
-label = "Star"
-# TODO: wire to Subsonic API once secrets-handling is in place.
+type = "mpris_star"
+player = "Feishin"

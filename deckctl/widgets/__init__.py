@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from ..services.mpris import MprisService
     from ..services.pipewire import PipewireService
     from ..services.producers import Producer
+    from ..services.subsonic import SubsonicService
 
 
 @dataclass
@@ -30,6 +31,7 @@ class WidgetDeps:
     ha: "HAService | None" = None
     marks: "MarksService | None" = None
     bluez: "BluezService | None" = None
+    subsonic: "SubsonicService | None" = None
     # Dynamic-list producers, keyed by name (e.g. "audio_sink", "bluez").
     # ActivePage looks them up to expand `type = "dynamic"` keys.
     producers: "dict[str, Producer] | None" = None
@@ -73,6 +75,10 @@ from . import command as _command  # noqa: E402, F401
 from . import ha_action as _ha_action  # noqa: E402, F401
 from . import mic_mute as _mic_mute  # noqa: E402, F401
 from . import mpris as _mpris  # noqa: E402, F401
+from . import mpris_loop as _mpris_loop  # noqa: E402, F401
+from . import mpris_shuffle as _mpris_shuffle  # noqa: E402, F401
+from . import mpris_star as _mpris_star  # noqa: E402, F401
+from . import mpris_title as _mpris_title  # noqa: E402, F401
 from . import page as _page  # noqa: E402, F401
 from . import sway_mark as _sway_mark  # noqa: E402, F401
 from . import sway_mark_new as _sway_mark_new  # noqa: E402, F401
