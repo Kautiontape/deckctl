@@ -16,54 +16,31 @@ player = "Feishin"
 on_press = "playerctl --player=Feishin play-pause"
 on_long_press = "page:feishin"
 
+# Combined Next/Prev: tap = next, long-press = previous. Saves a slot.
 [[keys]]
 pos = [2, 0]
 type = "command"
-icon = "media-skip-backward"
-on_press = "playerctl --player=Feishin previous"
+icon = "media-skip-forward"
+label = "Next"
+on_press = "playerctl --player=Feishin next"
+on_long_press = "playerctl --player=Feishin previous"
 
+# Audio output picker, sits next to mic for an "audio devices" cluster.
 [[keys]]
 pos = [3, 0]
-type = "command"
-icon = "media-skip-forward"
-on_press = "playerctl --player=Feishin next"
-
-[[keys]]
-pos = [4, 0]
-type = "mic_mute"
-
-# Row 1
-[[keys]]
-pos = [0, 1]
 type = "page"
 target = "audio-out"
 icon = "audio-headphones"
 label = "Out"
 
+# Mic mute on tap; long-press opens the input picker.
 [[keys]]
-pos = [1, 1]
-type = "volume"
-direction = "down"
-step = 5
+pos = [4, 0]
+type = "mic_mute"
+on_long_press = "page:audio-in"
 
-[[keys]]
-pos = [2, 1]
-type = "volume"
-direction = "mute"
-
-[[keys]]
-pos = [3, 1]
-type = "volume"
-direction = "up"
-step = 5
-
-[[keys]]
-pos = [4, 1]
-type = "page"
-target = "bluetooth"
-icon = "bluetooth"
-label = "BT"
-
+# Row 1 — left intentionally open for now (recents row coming).
+# (Volume keys removed: handled by a separate hardware device.)
 
 # Row 2
 [[keys]]
@@ -100,3 +77,12 @@ type = "page"
 target = "power"
 icon = "system-shutdown"
 label = "Power"
+
+# Row 1 placeholder until recents lands. BT moves up if/when we want it
+# back on Main; for now we'll just access via Audio Out → BT path.
+[[keys]]
+pos = [4, 1]
+type = "page"
+target = "bluetooth"
+icon = "bluetooth"
+label = "BT"

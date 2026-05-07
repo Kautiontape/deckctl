@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from PIL.Image import Image
 
+from ..actions import execute
 from ..render import render_key
 from ..services.pipewire import DEFAULT_SOURCE
 from . import WidgetDeps, register
@@ -15,6 +16,7 @@ class MicMuteWidget:
         self._deps = deps
         self.invalidate = None
         self._unsub = None
+        self.on_long_press_action: str | None = settings.get("on_long_press")
         if deps.pipewire is not None:  # type: ignore[attr-defined]
             self._unsub = deps.pipewire.subscribe(self._on_change)  # type: ignore[attr-defined]
 
@@ -39,6 +41,9 @@ class MicMuteWidget:
         pw.toggle_mute(DEFAULT_SOURCE)
 
     def on_long_press(self, ctx) -> None:
+        if self.on_long_press_action:
+            execute(self.on_long_press_action, ctx)
+            return
         self.on_press(ctx)
 
     def _on_change(self) -> None:

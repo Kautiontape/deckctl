@@ -70,6 +70,7 @@ def build(key: KeyDef, deps: WidgetDeps) -> Widget:
 
 # Import widget modules so their @register calls take effect.
 from . import audio_sink as _audio_sink  # noqa: E402, F401
+from . import audio_source as _audio_source  # noqa: E402, F401
 from . import bluez as _bluez  # noqa: E402, F401
 from . import command as _command  # noqa: E402, F401
 from . import ha_action as _ha_action  # noqa: E402, F401

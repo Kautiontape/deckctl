@@ -55,6 +55,29 @@ class AudioSinkProducer:
         return self.pipewire.subscribe(cb)
 
 
+class AudioSourceProducer:
+    """Lists default-input sources (microphones) with the active one flagged."""
+
+    def __init__(self, pipewire: "PipewireService"):
+        self.pipewire = pipewire
+
+    def items(self) -> list[ProducerItem]:
+        return [
+            ProducerItem(
+                widget_type="audio_source",
+                settings={
+                    "source_name": s["name"],
+                    "description": s["description"],
+                    "is_default": s["default"],
+                },
+            )
+            for s in self.pipewire.audio_sources()
+        ]
+
+    def subscribe(self, cb: Callable[[], None]) -> Callable[[], None]:
+        return self.pipewire.subscribe(cb)
+
+
 class BluezProducer:
     """Lists paired Bluetooth devices with their connect state."""
 

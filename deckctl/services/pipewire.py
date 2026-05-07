@@ -150,6 +150,71 @@ class PipewireService:
         """Switch the default sink by stable name (e.g. 'bluez_output.…')."""
         self._run(["pactl", "set-default-sink", name])
 
+    def audio_sources(self) -> list[dict]:
+        """Snapshot of input sources (microphones, etc.).
+
+        Same shape as audio_sinks(). Filters out monitor sources (which
+        capture sink output, not real inputs) — those exist for every
+        sink and would clutter the list.
+        """
+        default_name = ""
+        try:
+            default_name = subprocess.check_output(
+                ["pactl", "get-default-source"], text=True, timeout=2
+            ).strip()
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return []
+
+        descriptions: dict[str, str] = {}
+        monitors: set[str] = set()
+        try:
+            long_out = subprocess.check_output(
+                ["pactl", "list", "sources"], text=True, timeout=2
+            )
+            current_name: str | None = None
+            current_props: list[str] = []
+            for line in long_out.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("Source #") or stripped.startswith("Description: "):
+                    pass
+                if stripped.startswith("Name: "):
+                    current_name = stripped[len("Name: "):]
+                    current_props = []
+                elif stripped.startswith("Description: ") and current_name:
+                    descriptions[current_name] = stripped[len("Description: "):]
+                elif stripped.startswith("Monitor of Sink:") and current_name:
+                    # Remember sources flagged as a sink monitor so we drop them.
+                    if "n/a" not in stripped.lower():
+                        monitors.add(current_name)
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            pass
+
+        try:
+            short_out = subprocess.check_output(
+                ["pactl", "list", "sources", "short"], text=True, timeout=2
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return []
+
+        sources: list[dict] = []
+        for line in short_out.strip().splitlines():
+            parts = line.split("\t")
+            if len(parts) < 2:
+                continue
+            name = parts[1]
+            if name in monitors or ".monitor" in name:
+                continue
+            sources.append({
+                "name": name,
+                "description": descriptions.get(name, name),
+                "default": name == default_name,
+            })
+        return sources
+
+    def set_default_source(self, name: str) -> None:
+        """Switch the default source by stable name."""
+        self._run(["pactl", "set-default-source", name])
+
     # ─── internals ─────────────────────────────────────────────────────────
 
     def _run(self, argv: list[str]) -> None:

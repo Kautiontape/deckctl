@@ -19,7 +19,7 @@ from .services.ha import HAService
 from .services.marks import MarksService
 from .services.mpris import MprisService, start_glib_loop
 from .services.pipewire import PipewireService
-from .services.producers import AudioSinkProducer, BluezProducer
+from .services.producers import AudioSinkProducer, AudioSourceProducer, BluezProducer
 from .services.subsonic import SubsonicService
 from .services.sway import SwayService
 
@@ -195,6 +195,7 @@ class Daemon:
         producers: dict[str, object] = {}
         if self.pipewire is not None:
             producers["audio_sink"] = AudioSinkProducer(self.pipewire)
+            producers["audio_source"] = AudioSourceProducer(self.pipewire)
         if self.bluez is not None:
             producers["bluez"] = BluezProducer(self.bluez)
         deps.producers = producers  # type: ignore[assignment]
