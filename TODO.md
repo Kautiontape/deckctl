@@ -47,26 +47,29 @@ Numbers map to the build sequence in the design proposal.
         `~/.config/deckctl/secrets.env` (HA_URL, HA_TOKEN; gitignored,
         mode 0600). Daemon logs and no-ops if secrets are absent.
 
-## Verified end-to-end as of step 2
+## Beyond the build sequence
 
-- TOML config loading for all 6 example pages
-- Page navigation: push, back, default fallback
-- Action parsing (`page:`, `back`, `command:`, bare-string)
-- Per-key icon + label rendering (PIL + cairosvg for Papirus SVGs)
-- Long-press detection (≥800ms by default; per-key override via `long_press_ms`)
-- Stub fallbacks for unimplemented widget types
+Things added on top of #1-#7 that are also live:
 
-Run `python3 scripts/smoke_test.py` to regenerate `/tmp/deckctl-smoke/*.png`
-and verify the layout without a deck.
+- [x] Sway marks page with 12 deck slots, assign mode, and bury toggle
+      (tap a marked window to send it to scratchpad / bring it back).
+- [x] Concurrency: HID writes serialized through DeckHandle._io_lock so
+      two reactive services can't interleave image chunks on the wire.
+- [x] Page transitions dispose the previous ActivePage so widgets
+      unsubscribe from services and weather threads stop.
 
-## Hardware blocker
+## Next architectural work
 
-The deck on this machine is currently in a libusb stuck state — feature
-reports fail with -1 and only a USB replug or reboot will reliably clear
-it. Suspected cause: a prior StreamController crash. The daemon code is
-device-agnostic but **has not yet been exercised against live hardware** in
-this session. First test: replug the deck, run `deckctl --verbose`, expect
-the Main page to render.
+- [ ] **Dynamic-list widget mechanism.** One TOML key expands into N
+      runtime keys based on system state, so a widget can fill a region.
+      Needed by `audio_sink` and `bluez`. Likely shape: a `dynamic` key
+      with `producer = "audio_sink"`, `region = [start_pos, slots]`, and
+      the page renderer expands the slots when state changes.
+- [ ] **`audio_sink` widget.** Once the dynamic-list lands. One button
+      per PipeWire sink with the current default highlighted. Wires the
+      "Out" key on Main to the audio-out sub-page.
+- [ ] **`bluez` widget.** Same shape as audio_sink but over BlueZ D-Bus.
+      Wires the "BT" key on Main.
 
 ## Polish / nice-to-haves
 
@@ -78,6 +81,11 @@ the Main page to render.
 - [ ] State badges on `page` keys (e.g. red dot if a sub-page has an "alarm" state).
 - [ ] Multi-deck support (currently first MK.2 wins).
 - [ ] Hot-reload of icon theme.
+
+## Smoke testing
+
+- `python3 scripts/smoke_test.py` regenerates `/tmp/deckctl-smoke/*.png`
+  for the bundled example pages without touching the deck.
 
 ## Known gaps
 
