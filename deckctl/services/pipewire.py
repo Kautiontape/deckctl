@@ -96,6 +96,60 @@ class PipewireService:
     def set_default(self, sink_id: str) -> None:
         self._run(["wpctl", "set-default", sink_id])
 
+    def audio_sinks(self) -> list[dict]:
+        """Snapshot of available sinks: [{name, description, default}, ...].
+
+        `name` is the stable PipeWire object name (use it for set_default_sink).
+        `description` is the human-friendly label.
+        """
+        default_name = ""
+        try:
+            default_name = subprocess.check_output(
+                ["pactl", "get-default-sink"], text=True, timeout=2
+            ).strip()
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return []
+
+        descriptions: dict[str, str] = {}
+        try:
+            long_out = subprocess.check_output(
+                ["pactl", "list", "sinks"], text=True, timeout=2
+            )
+            current_name: str | None = None
+            for line in long_out.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("Name: "):
+                    current_name = stripped[len("Name: "):]
+                elif stripped.startswith("Description: ") and current_name:
+                    descriptions[current_name] = stripped[len("Description: "):]
+                    current_name = None
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            pass
+
+        try:
+            short_out = subprocess.check_output(
+                ["pactl", "list", "sinks", "short"], text=True, timeout=2
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return []
+
+        sinks: list[dict] = []
+        for line in short_out.strip().splitlines():
+            parts = line.split("\t")
+            if len(parts) < 2:
+                continue
+            name = parts[1]
+            sinks.append({
+                "name": name,
+                "description": descriptions.get(name, name),
+                "default": name == default_name,
+            })
+        return sinks
+
+    def set_default_sink(self, name: str) -> None:
+        """Switch the default sink by stable name (e.g. 'bluez_output.…')."""
+        self._run(["pactl", "set-default-sink", name])
+
     # ─── internals ─────────────────────────────────────────────────────────
 
     def _run(self, argv: list[str]) -> None:

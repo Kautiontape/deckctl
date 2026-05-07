@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from ..services.marks import MarksService
     from ..services.mpris import MprisService
     from ..services.pipewire import PipewireService
+    from ..services.producers import Producer
 
 
 @dataclass
@@ -27,6 +28,9 @@ class WidgetDeps:
     pipewire: "PipewireService | None" = None
     ha: "HAService | None" = None
     marks: "MarksService | None" = None
+    # Dynamic-list producers, keyed by name (e.g. "audio_sink", "bluez").
+    # ActivePage looks them up to expand `type = "dynamic"` keys.
+    producers: "dict[str, Producer] | None" = None
 
 
 class Widget(Protocol):
@@ -61,6 +65,7 @@ def build(key: KeyDef, deps: WidgetDeps) -> Widget:
 
 
 # Import widget modules so their @register calls take effect.
+from . import audio_sink as _audio_sink  # noqa: E402, F401
 from . import command as _command  # noqa: E402, F401
 from . import ha_action as _ha_action  # noqa: E402, F401
 from . import mic_mute as _mic_mute  # noqa: E402, F401

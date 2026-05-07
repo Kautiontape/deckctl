@@ -60,16 +60,19 @@ Things added on top of #1-#7 that are also live:
 
 ## Next architectural work
 
-- [ ] **Dynamic-list widget mechanism.** One TOML key expands into N
-      runtime keys based on system state, so a widget can fill a region.
-      Needed by `audio_sink` and `bluez`. Likely shape: a `dynamic` key
-      with `producer = "audio_sink"`, `region = [start_pos, slots]`, and
-      the page renderer expands the slots when state changes.
-- [ ] **`audio_sink` widget.** Once the dynamic-list lands. One button
-      per PipeWire sink with the current default highlighted. Wires the
-      "Out" key on Main to the audio-out sub-page.
-- [ ] **`bluez` widget.** Same shape as audio_sink but over BlueZ D-Bus.
-      Wires the "BT" key on Main.
+- [x] **Dynamic-list widget mechanism.** A `[[keys]]` entry with
+      `type = "dynamic"`, `producer = "<name>"`, `slots = N` is expanded
+      by ActivePage into N regular widgets at sequential positions
+      starting from `pos`. Each `_DynamicRegion` subscribes to its
+      producer and rebuilds in place on state changes.
+- [x] **`audio_sink` widget + audio-out page.** Sinks listed by
+      `AudioSinkProducer` (wraps PipewireService); current default
+      flagged with a green top border. Tap to switch. Reactive on
+      pactl subscribe events.
+- [ ] **`bluez` widget.** Mirror of audio_sink but over BlueZ D-Bus
+      (`bluetoothctl devices Paired` for the list, `bluetoothctl info
+      <mac>` for connect state, `bluetoothctl monitor` or D-Bus
+      PropertiesChanged for reactivity). Wires the "BT" key on Main.
 
 ## Polish / nice-to-haves
 

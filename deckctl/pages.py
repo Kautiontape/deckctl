@@ -11,7 +11,7 @@ import logging
 import time
 from typing import Callable
 
-from .config import DeckConfig, PageDef
+from .config import DeckConfig, KeyDef, PageDef
 from .icons import IconResolver
 from .widgets import Widget, WidgetDeps, build
 
@@ -90,36 +90,65 @@ class ActivePage:
         self.rows = deck_rows
         self.long_press_default_ms = long_press_default_ms
         self._push = push
+        self._deps = deps
         # widgets keyed by linear key index
         self.widgets: dict[int, Widget] = {}
         self.long_press_ms: dict[int, int] = {}
         self._press_starts: dict[int, float] = {}
+        # Dynamic regions: each holds its own producer subscription and
+        # tracks which indices it currently owns so it can rebuild.
+        self._regions: list[_DynamicRegion] = []
 
         for kdef in page.keys:
-            col, row = kdef.pos
-            if not (0 <= col < deck_cols and 0 <= row < deck_rows):
-                log.warning("page %s: pos %s out of range", page.name, kdef.pos)
+            if kdef.type == "dynamic":
+                region = _DynamicRegion(kdef, self)
+                self._regions.append(region)
+                region.expand()
                 continue
-            idx = row * deck_cols + col
-            try:
-                w = build(kdef, deps)
-            except Exception:
-                log.exception("page %s pos %s: failed to build widget %r",
-                              page.name, kdef.pos, kdef.type)
-                continue
-            self.widgets[idx] = w
-            self.long_press_ms[idx] = int(
-                kdef.settings.get("long_press_ms", long_press_default_ms)
+            self._add_widget(kdef)
+
+    def _add_widget(self, kdef: KeyDef) -> int | None:
+        col, row = kdef.pos
+        if not (0 <= col < self.cols and 0 <= row < self.rows):
+            log.warning("page %s: pos %s out of range", self.page.name, kdef.pos)
+            return None
+        idx = row * self.cols + col
+        try:
+            w = build(kdef, self._deps)
+        except Exception:
+            log.exception(
+                "page %s pos %s: failed to build widget %r",
+                self.page.name, kdef.pos, kdef.type,
             )
-            # Bind invalidate so reactive widgets can update themselves.
-            w.invalidate = self._invalidator_for(idx, w)
+            return None
+        self.widgets[idx] = w
+        self.long_press_ms[idx] = int(
+            kdef.settings.get("long_press_ms", self.long_press_default_ms)
+        )
+        w.invalidate = self._invalidator_for(idx, w)
+        return idx
+
+    def _remove_widget(self, idx: int) -> None:
+        w = self.widgets.pop(idx, None)
+        self.long_press_ms.pop(idx, None)
+        if w is None:
+            return
+        disp = getattr(w, "dispose", None)
+        if disp is not None:
+            try:
+                disp()
+            except Exception:
+                log.exception("widget dispose at idx %d raised", idx)
 
     def dispose(self) -> None:
         """Tear down widgets so they unsubscribe from services and stop threads.
 
         Called by the daemon when this page is being replaced. Idempotent.
         """
-        for idx, w in self.widgets.items():
+        for region in self._regions:
+            region.dispose()
+        self._regions.clear()
+        for idx, w in list(self.widgets.items()):
             disp = getattr(w, "dispose", None)
             if disp is None:
                 continue
@@ -176,6 +205,98 @@ class ActivePage:
                 widget.on_press(ctx)
         except Exception:
             log.exception("widget action raised at idx %d", idx)
+
+
+class _DynamicRegion:
+    """One dynamic-list region inside an ActivePage.
+
+    Resolves a producer from deps, materializes its items into widgets at
+    sequential positions starting at `kdef.pos`, and re-builds whenever
+    the producer fires its subscription callback.
+    """
+
+    def __init__(self, kdef: KeyDef, page: "ActivePage"):
+        self.kdef = kdef
+        self.page = page
+        producer_name = kdef.settings.get("producer", "")
+        producers = getattr(page._deps, "producers", None) or {}
+        self.producer = producers.get(producer_name)
+        if self.producer is None:
+            log.warning(
+                "dynamic: producer %r not registered (known: %s)",
+                producer_name, sorted(producers),
+            )
+        self.slots = max(1, int(kdef.settings.get("slots", 1)))
+        self.start_col, self.start_row = kdef.pos
+        self.indices: list[int] = []
+        self._unsub = None
+        if self.producer is not None:
+            self._unsub = self.producer.subscribe(self._on_change)
+
+    def _slot_indices(self) -> list[int]:
+        """All positions this region MAY occupy (row-wrapping at deck width)."""
+        out: list[int] = []
+        for offset in range(self.slots):
+            linear = self.start_row * self.page.cols + self.start_col + offset
+            row = linear // self.page.cols
+            if row >= self.page.rows:
+                break
+            out.append(linear)
+        return out
+
+    def expand(self) -> None:
+        """Build widgets for the current items. Push images for changed slots."""
+        if self.producer is None:
+            return
+        try:
+            items = self.producer.items()
+        except Exception:
+            log.exception("dynamic: producer %r .items() raised", self.kdef.settings)
+            items = []
+
+        slot_indices = self._slot_indices()
+        new_indices: list[int] = []
+        for idx, item in zip(slot_indices, items):
+            kdef = KeyDef(
+                pos=(idx % self.page.cols, idx // self.page.cols),
+                type=item.widget_type,
+                settings=dict(item.settings),
+            )
+            placed = self.page._add_widget(kdef)
+            if placed is not None:
+                new_indices.append(placed)
+        self.indices = new_indices
+
+        # Push images for newly-placed widgets.
+        if self.page._push is not None:
+            for idx in new_indices:
+                w = self.page.widgets.get(idx)
+                if w is None:
+                    continue
+                try:
+                    img = w.render()
+                except Exception:
+                    log.exception("dynamic: render at idx %d", idx)
+                    continue
+                self.page._push(idx, img)
+            # Blank any reserved slots that no longer have an item.
+            for idx in slot_indices:
+                if idx not in new_indices:
+                    self.page._push(idx, None)
+
+    def _on_change(self) -> None:
+        # Tear down current widgets, then re-expand. Both happen on the
+        # producer's dispatch thread, which is fine — set_key_image is
+        # serialized through DeckHandle._io_lock.
+        for idx in list(self.indices):
+            self.page._remove_widget(idx)
+        self.indices.clear()
+        self.expand()
+
+    def dispose(self) -> None:
+        if self._unsub is not None:
+            self._unsub()
+            self._unsub = None
 
 
 def make_widget_deps(deck_cfg: DeckConfig, key_size: tuple[int, int]) -> WidgetDeps:

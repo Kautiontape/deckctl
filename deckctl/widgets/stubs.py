@@ -55,5 +55,5 @@ def _stub_for(type_name: str) -> type:
     return register(type_name)(cls)
 
 
-for _t in ("audio_sink", "bluez", "clock"):
+for _t in ("bluez", "clock"):
     _stub_for(_t)

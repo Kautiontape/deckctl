@@ -18,6 +18,7 @@ from .services.ha import HAService
 from .services.marks import MarksService
 from .services.mpris import MprisService, start_glib_loop
 from .services.pipewire import PipewireService
+from .services.producers import AudioSinkProducer
 from .services.sway import SwayService
 
 log = logging.getLogger("deckctl")
@@ -117,6 +118,10 @@ class Daemon:
         deps.pipewire = self.pipewire
         deps.ha = self.ha
         deps.marks = self.marks
+        producers: dict[str, object] = {}
+        if self.pipewire is not None:
+            producers["audio_sink"] = AudioSinkProducer(self.pipewire)
+        deps.producers = producers  # type: ignore[assignment]
 
         def push(idx: int, image) -> None:
             if self.deck is not None:
