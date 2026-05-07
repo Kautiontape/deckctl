@@ -18,6 +18,7 @@ from typing import Callable, Protocol, TYPE_CHECKING
 if TYPE_CHECKING:
     from .bluez import BluezService
     from .pipewire import PipewireService
+    from .recents import RecentsService
 
 
 @dataclass
@@ -76,6 +77,34 @@ class AudioSourceProducer:
 
     def subscribe(self, cb: Callable[[], None]) -> Callable[[], None]:
         return self.pipewire.subscribe(cb)
+
+
+class RecentsProducer:
+    """Most-recently-focused windows. Skips the currently-focused one by
+    default — that window is by definition the one you're already on, so
+    showing it as a "jump back" target is wasted real estate."""
+
+    def __init__(self, recents: "RecentsService", skip_current: bool = True):
+        self.recents = recents
+        self.skip_current = skip_current
+
+    def items(self) -> list[ProducerItem]:
+        history = self.recents.items()
+        start = 1 if self.skip_current and history else 0
+        return [
+            ProducerItem(
+                widget_type="sway_window",
+                settings={
+                    "con_id": r["con_id"],
+                    "app_id": r["app_id"],
+                    "name": r["name"],
+                },
+            )
+            for r in history[start:]
+        ]
+
+    def subscribe(self, cb: Callable[[], None]) -> Callable[[], None]:
+        return self.recents.subscribe(cb)
 
 
 class BluezProducer:

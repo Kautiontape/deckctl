@@ -103,6 +103,20 @@ Skipped (per user):
 - [ ] ~~Per-page brightness override~~ — not useful enough.
 - [ ] ~~Multi-deck support~~ — only one deck.
 
+Done since last:
+
+- [x] **Sway workspace indicator** on the Sway page. WS keys are now
+      `sway_workspace` widgets that highlight live as you switch
+      workspaces. Tap moves the focused container; long-press switches
+      focus only.
+- [x] **Recents row** on Main. RecentsService tracks an MRU window
+      list via sway focus events; RecentsProducer feeds the dynamic
+      list. Skips the currently-focused window so the row shows the 4
+      "previous" windows. sway_window widget renders app icon +
+      truncated name; tap focuses the window.
+- [x] **Audio input picker.** Mic long-press → audio-in page mirroring
+      audio-out. Mic widget honors `on_long_press` from settings.
+
 Open / speculative:
 
 - [ ] State badges on `page` keys. Sub-pages would publish a state
@@ -116,6 +130,9 @@ Open / speculative:
 - [ ] `dbus:` action prefix. Currently we shell to `dbus-send` for the
       Open Feishin button. A native `dbus:bus:path:method` action prefix
       would be cleaner and faster but isn't pressing.
+- [ ] Recents backfill at daemon start. Currently the row is empty
+      until you focus a few windows; could walk the sway tree at start
+      to seed it (ordering would be arbitrary but better than blank).
 
 ## Smoke testing
 

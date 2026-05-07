@@ -85,6 +85,7 @@ from . import mpris_title as _mpris_title  # noqa: E402, F401
 from . import page as _page  # noqa: E402, F401
 from . import sway_mark as _sway_mark  # noqa: E402, F401
 from . import sway_mark_new as _sway_mark_new  # noqa: E402, F401
+from . import sway_window as _sway_window  # noqa: E402, F401
 from . import sway_workspace as _sway_workspace  # noqa: E402, F401
 from . import volume as _volume  # noqa: E402, F401
 from . import weather as _weather  # noqa: E402, F401

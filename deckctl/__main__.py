@@ -19,7 +19,13 @@ from .services.ha import HAService
 from .services.marks import MarksService
 from .services.mpris import MprisService, start_glib_loop
 from .services.pipewire import PipewireService
-from .services.producers import AudioSinkProducer, AudioSourceProducer, BluezProducer
+from .services.producers import (
+    AudioSinkProducer,
+    AudioSourceProducer,
+    BluezProducer,
+    RecentsProducer,
+)
+from .services.recents import RecentsService
 from .services.subsonic import SubsonicService
 from .services.sway import SwayService
 
@@ -40,6 +46,7 @@ class Daemon:
         self.ha: HAService | None = None
         self.sway: SwayService | None = None
         self.marks: MarksService | None = None
+        self.recents: RecentsService | None = None
         self.bluez: BluezService | None = None
         self.subsonic: SubsonicService | None = None
         self._stop = threading.Event()
@@ -76,6 +83,7 @@ class Daemon:
             log.info("ha: secrets not set; ha_action keys will be no-ops")
         self.sway = SwayService()
         self.marks = MarksService(self.sway)
+        self.recents = RecentsService(self.sway)
         try:
             self.bluez = BluezService()
         except Exception:
@@ -199,6 +207,8 @@ class Daemon:
             producers["audio_source"] = AudioSourceProducer(self.pipewire)
         if self.bluez is not None:
             producers["bluez"] = BluezProducer(self.bluez)
+        if self.recents is not None:
+            producers["recents"] = RecentsProducer(self.recents)
         deps.producers = producers  # type: ignore[assignment]
 
         def push(idx: int, image) -> None:

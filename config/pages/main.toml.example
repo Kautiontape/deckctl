@@ -39,8 +39,14 @@ pos = [4, 0]
 type = "mic_mute"
 on_long_press = "page:audio-in"
 
-# Row 1 — left intentionally open for now (recents row coming).
-# (Volume keys removed: handled by a separate hardware device.)
+# Row 1 — recents: 4 most-recently-focused windows (excluding the
+# current one). Tap to focus that window. Auto-fills as you work; no
+# config required.
+[[keys]]
+pos = [0, 1]
+type = "dynamic"
+producer = "recents"
+slots = 4
 
 # Row 2
 [[keys]]
