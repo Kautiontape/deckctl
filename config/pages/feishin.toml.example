@@ -66,7 +66,7 @@ type = "mic_mute"
 [[keys]]
 pos = [4, 1]
 type = "command"
-icon = "applications-multimedia"
+icon = "music"
 label = "Open"
 on_press = "~/.config/sway/bin/sway-scratchpad-launch.sh feishin"
 

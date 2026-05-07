@@ -8,9 +8,20 @@ default_page = "main"
 font = "DejaVu Sans"
 
 [paths]
+# Multiple sources, first match wins. Local icons override theme icons.
+# Papirus is split across size buckets; we list the most useful ones. The
+# FontAwesome dir is left over from StreamController and has icons Papirus
+# is missing (e.g. headphones, music, bolt).
 icons = [
     "~/.config/deckctl/icons",
-    "/usr/share/icons/Papirus-Dark/24x24",
+    "/usr/share/icons/Papirus-Dark/24x24/actions",
+    "/usr/share/icons/Papirus-Dark/24x24/categories",
+    "/usr/share/icons/Papirus-Dark/24x24/places",
+    "/usr/share/icons/Papirus-Dark/24x24/status",
+    "/usr/share/icons/Papirus-Dark/16x16/devices",
+    "/usr/share/icons/Papirus-Dark/16x16/places",
+    "/usr/share/icons/Papirus-Dark/48x48/apps",
+    "~/.var/app/com.core447.StreamController/data/icons/com_axolotlmaid_FontAwesomeIcons/icons/white",
 ]
 secrets = "~/.config/deckctl/secrets.env"
 

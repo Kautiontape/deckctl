@@ -78,25 +78,25 @@ on_press = 'swaymsg mode resize'
 [[keys]]
 pos = [0, 2]
 type = "command"
-label = "→ 1"
+label = "WS 1"
 on_press = "swaymsg move container to workspace 1"
 
 [[keys]]
 pos = [1, 2]
 type = "command"
-label = "→ 2"
+label = "WS 2"
 on_press = "swaymsg move container to workspace 2"
 
 [[keys]]
 pos = [2, 2]
 type = "command"
-label = "→ 3"
+label = "WS 3"
 on_press = "swaymsg move container to workspace 3"
 
 [[keys]]
 pos = [3, 2]
 type = "command"
-label = "→ 4"
+label = "WS 4"
 on_press = "swaymsg move container to workspace 4"
 
 [[keys]]

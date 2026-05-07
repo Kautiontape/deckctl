@@ -37,9 +37,14 @@ Key positions are addressed as `(col, row)` with `(0, 0)` top-left.
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-Single `asyncio` event loop. The `python-elgato-streamdeck` library provides
-HID I/O; we drive it through its `StreamDeck.set_key_callback()` for input and
-`set_key_image()` for output.
+The `python-elgato-streamdeck` library provides HID I/O; we drive it through
+its `StreamDeck.set_key_callback()` for input and `set_key_image()` for output.
+
+The current implementation is **threaded**, not asyncio: the StreamDeck
+library's reader runs on a worker thread and invokes our key callback there.
+We'll introduce `asyncio` only when reactive widgets land (MPRIS, BlueZ,
+PipeWire) — at that point each subscription becomes its own task and posts
+invalidations back to the main thread via a thread-safe queue.
 
 ## Config language (TOML)
 

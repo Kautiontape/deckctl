@@ -21,14 +21,37 @@ things we explicitly chose to defer or aren't sure about yet.
 
 Numbers map to the build sequence in the design proposal.
 
-- [ ] 1. Daemon skeleton: connect, blank-page render, SIGHUP/SIGTERM, systemd
+- [x] 1. Daemon skeleton: connect, blank-page render, SIGHUP/SIGTERM, systemd
         unit, udev rule.
-- [ ] 2. `command` and `page` widgets + page navigation stack.
+- [x] 2. `command` and `page` widgets + page navigation stack. Stub widgets
+        registered for later types so example layouts render.
 - [ ] 3. Scratchpad page generator from `~/.config/sway/scratchpad-config.ini`.
 - [ ] 4. `mpris` widget: track text + album art + play/pause. Feishin page.
-- [ ] 5. `volume`, `mic_mute`, `audio_sink` widgets (PipeWire).
-- [ ] 6. Weather, BlueZ, Sway, Power pages.
-- [ ] 7. HA actions + secrets handling.
+        Replace stub registration in `widgets/stubs.py`.
+- [ ] 5. `volume`, `mic_mute`, `audio_sink` widgets (PipeWire). Replace stubs.
+- [ ] 6. Weather, BlueZ widgets. Replace stubs.
+- [ ] 7. HA actions + secrets handling. Replace `ha_action` stub.
+
+## Verified end-to-end as of step 2
+
+- TOML config loading for all 6 example pages
+- Page navigation: push, back, default fallback
+- Action parsing (`page:`, `back`, `command:`, bare-string)
+- Per-key icon + label rendering (PIL + cairosvg for Papirus SVGs)
+- Long-press detection (≥800ms by default; per-key override via `long_press_ms`)
+- Stub fallbacks for unimplemented widget types
+
+Run `python3 scripts/smoke_test.py` to regenerate `/tmp/deckctl-smoke/*.png`
+and verify the layout without a deck.
+
+## Hardware blocker
+
+The deck on this machine is currently in a libusb stuck state — feature
+reports fail with -1 and only a USB replug or reboot will reliably clear
+it. Suspected cause: a prior StreamController crash. The daemon code is
+device-agnostic but **has not yet been exercised against live hardware** in
+this session. First test: replug the deck, run `deckctl --verbose`, expect
+the Main page to render.
 
 ## Polish / nice-to-haves
 

@@ -1,0 +1,35 @@
+"""`command` widget — static icon + label, runs a shell command on press."""
+
+from __future__ import annotations
+
+from PIL.Image import Image
+
+from ..actions import execute
+from ..render import render_key
+from . import WidgetDeps, register
+
+
+@register("command")
+class CommandWidget:
+    def __init__(self, settings: dict, deps: WidgetDeps):
+        self.icon: str | None = settings.get("icon")
+        self.label: str | None = settings.get("label")
+        self.on_press_action: str | None = settings.get("on_press")
+        self.on_long_press_action: str | None = settings.get("on_long_press")
+        self._deps = deps
+        self.invalidate = None  # set by the page renderer
+
+    def render(self) -> Image:
+        return render_key(
+            size=self._deps.key_size,
+            icons=self._deps.icons,  # type: ignore[arg-type]
+            icon=self.icon,
+            label=self.label,
+            font_family=self._deps.font,
+        )
+
+    def on_press(self, ctx) -> None:
+        execute(self.on_press_action, ctx)
+
+    def on_long_press(self, ctx) -> None:
+        execute(self.on_long_press_action or self.on_press_action, ctx)

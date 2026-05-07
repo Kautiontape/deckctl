@@ -83,14 +83,14 @@ label = "Apps"
 pos = [2, 2]
 type = "page"
 target = "sway"
-icon = "preferences-desktop"
+icon = "desktop"
 label = "Sway"
 
 [[keys]]
 pos = [3, 2]
 type = "page"
 target = "ha"
-icon = "home"
+icon = "house"
 label = "Home"
 
 [[keys]]
