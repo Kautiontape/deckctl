@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 deckctl = "deckctl.__main__:main"
+deckctl-gen-scratchpads = "deckctl.tools.gen_scratchpads:main"
 
 [tool.setuptools.packages.find]
 include = ["deckctl*"]

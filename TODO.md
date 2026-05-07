@@ -25,7 +25,9 @@ Numbers map to the build sequence in the design proposal.
         unit, udev rule.
 - [x] 2. `command` and `page` widgets + page navigation stack. Stub widgets
         registered for later types so example layouts render.
-- [ ] 3. Scratchpad page generator from `~/.config/sway/scratchpad-config.ini`.
+- [x] 3. Scratchpad page generator. `deckctl-gen-scratchpads` reads the same
+        INI sway uses and writes `pages/scratchpads.toml`. Workflow: edit
+        INI → run generator → SIGHUP daemon.
 - [ ] 4. `mpris` widget: track text + album art + play/pause. Feishin page.
         Replace stub registration in `widgets/stubs.py`.
 - [ ] 5. `volume`, `mic_mute`, `audio_sink` widgets (PipeWire). Replace stubs.
