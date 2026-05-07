@@ -62,4 +62,5 @@ from . import mic_mute as _mic_mute  # noqa: E402, F401
 from . import mpris as _mpris  # noqa: E402, F401
 from . import page as _page  # noqa: E402, F401
 from . import volume as _volume  # noqa: E402, F401
+from . import weather as _weather  # noqa: E402, F401
 from . import stubs as _stubs  # noqa: E402, F401  (registers leftover types)

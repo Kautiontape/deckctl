@@ -38,7 +38,10 @@ Numbers map to the build sequence in the design proposal.
         actions. Volume key labels show current %. **Deferred:**
         `audio_sink` widget — needs the dynamic-list widget mechanism;
         easier once the audio-out sub-page exists.
-- [ ] 6. Weather, BlueZ widgets. Replace stubs.
+- [x] 6. Weather widget. Open-Meteo API (no key), polls every
+        `refresh_minutes` (default 15) on a daemon thread, maps WMO codes
+        to FontAwesome cloud/sun/etc. icons. **Deferred:** BlueZ widget
+        (same dynamic-list need as audio_sink).
 - [ ] 7. HA actions + secrets handling. Replace `ha_action` stub.
 
 ## Verified end-to-end as of step 2
