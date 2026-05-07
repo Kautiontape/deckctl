@@ -33,7 +33,11 @@ Numbers map to the build sequence in the design proposal.
         cover-art URLs) and LRU-cached. Direct D-Bus method calls for
         play/pause, next, prev (no shelling to playerctl). GLib mainloop
         thread runs alongside the deck reader thread.
-- [ ] 5. `volume`, `mic_mute`, `audio_sink` widgets (PipeWire). Replace stubs.
+- [x] 5. `volume` and `mic_mute` widgets. PipewireService runs `pactl
+        subscribe` for reactive change events; widgets shell to `wpctl` for
+        actions. Volume key labels show current %. **Deferred:**
+        `audio_sink` widget — needs the dynamic-list widget mechanism;
+        easier once the audio-out sub-page exists.
 - [ ] 6. Weather, BlueZ widgets. Replace stubs.
 - [ ] 7. HA actions + secrets handling. Replace `ha_action` stub.
 

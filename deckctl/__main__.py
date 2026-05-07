@@ -15,6 +15,7 @@ from .config import DeckConfig, PageDef, load_deck_config, load_pages, load_secr
 from .deck import DeckHandle
 from .pages import ActivePage, PageStack, make_widget_deps
 from .services.mpris import MprisService, start_glib_loop
+from .services.pipewire import PipewireService
 
 log = logging.getLogger("deckctl")
 
@@ -29,6 +30,7 @@ class Daemon:
         self.page_stack: PageStack | None = None
         self.active: ActivePage | None = None
         self.mpris: MprisService | None = None
+        self.pipewire: PipewireService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
 
@@ -44,6 +46,11 @@ class Daemon:
         except Exception:
             log.exception("mpris init failed; mpris widgets will be inert")
             self.mpris = None
+        try:
+            self.pipewire = PipewireService()
+        except Exception:
+            log.exception("pipewire init failed; volume/mic widgets will be inert")
+            self.pipewire = None
         deck = DeckHandle(serial=self.cfg.serial)
         deck.set_brightness(self.cfg.brightness)
         deck.set_key_callback(self._on_key)
@@ -90,6 +97,7 @@ class Daemon:
         assert self.deck is not None and self.cfg is not None
         deps = make_widget_deps(self.cfg, self.deck.key_size)
         deps.mpris = self.mpris
+        deps.pipewire = self.pipewire
 
         def push(idx: int, image) -> None:
             if self.deck is not None:
