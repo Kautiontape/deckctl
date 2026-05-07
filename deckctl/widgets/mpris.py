@@ -32,9 +32,10 @@ class MprisWidget:
         self.on_long_press_action: str | None = settings.get("on_long_press")
         self._deps = deps
         self.invalidate = None
+        self._unsub = None
 
         if deps.mpris is not None:
-            deps.mpris.subscribe(self.player, self._on_change)
+            self._unsub = deps.mpris.subscribe(self.player, self._on_change)
 
     # ─── render ───────────────────────────────────────────────────────────
 
@@ -125,3 +126,9 @@ class MprisWidget:
         cb = self.invalidate
         if cb is not None:
             cb()
+
+    def dispose(self) -> None:
+        if self._unsub is not None:
+            self._unsub()
+            self._unsub = None
+        self.invalidate = None

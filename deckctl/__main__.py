@@ -87,6 +87,9 @@ class Daemon:
 
     def _shutdown(self) -> None:
         log.info("shutting down")
+        if self.active is not None:
+            self.active.dispose()
+            self.active = None
         if self.deck is not None:
             self.deck.close()
 
@@ -114,6 +117,11 @@ class Daemon:
 
         def on_change(page: PageDef) -> None:
             assert self.deck is not None
+            # Tear down the previous page so its widgets unsubscribe from
+            # services. Without this, an old MprisWidget would keep pushing
+            # album art to its old key index even after we navigate away.
+            if self.active is not None:
+                self.active.dispose()
             self.active = ActivePage(
                 page,
                 deck_cols=self.deck.cols,

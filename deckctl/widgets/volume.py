@@ -21,9 +21,10 @@ class VolumeWidget:
         self.step: int = int(settings.get("step", 5))
         self._deps = deps
         self.invalidate = None
+        self._unsub = None
 
         if deps.pipewire is not None:  # type: ignore[attr-defined]
-            deps.pipewire.subscribe(self._on_change)  # type: ignore[attr-defined]
+            self._unsub = deps.pipewire.subscribe(self._on_change)  # type: ignore[attr-defined]
 
     def render(self) -> Image:
         vol, muted = (0.0, False)
@@ -76,3 +77,9 @@ class VolumeWidget:
         cb = self.invalidate
         if cb is not None:
             cb()
+
+    def dispose(self) -> None:
+        if self._unsub is not None:
+            self._unsub()
+            self._unsub = None
+        self.invalidate = None

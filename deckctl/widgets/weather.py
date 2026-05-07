@@ -103,6 +103,11 @@ class WeatherWidget:
             self._fetch_once()
             self._stop.wait(self.refresh_seconds)
 
+    def dispose(self) -> None:
+        # Tell the polling thread to exit on its next wake.
+        self._stop.set()
+        self.invalidate = None
+
     def _fetch_once(self) -> None:
         unit = "fahrenheit" if self.unit == "F" else "celsius"
         params = {

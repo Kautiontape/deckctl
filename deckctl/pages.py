@@ -114,6 +114,21 @@ class ActivePage:
             # Bind invalidate so reactive widgets can update themselves.
             w.invalidate = self._invalidator_for(idx, w)
 
+    def dispose(self) -> None:
+        """Tear down widgets so they unsubscribe from services and stop threads.
+
+        Called by the daemon when this page is being replaced. Idempotent.
+        """
+        for idx, w in self.widgets.items():
+            disp = getattr(w, "dispose", None)
+            if disp is None:
+                continue
+            try:
+                disp()
+            except Exception:
+                log.exception("widget dispose at idx %d raised", idx)
+        self.widgets.clear()
+
     def _invalidator_for(self, idx: int, widget: Widget) -> Callable[[], None]:
         push = self._push
         if push is None:

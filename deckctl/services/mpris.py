@@ -87,14 +87,30 @@ class MprisService:
 
     # ─── public API ────────────────────────────────────────────────────────
 
-    def subscribe(self, player_name: str, callback: Callable[[], None]) -> None:
+    def subscribe(
+        self, player_name: str, callback: Callable[[], None]
+    ) -> Callable[[], None]:
         """Register a callback fired when this player's state changes.
+
+        Returns an unsubscribe function the caller MUST call when the
+        widget is going away (e.g. on page transition). Subscribers are
+        held by identity, so passing the same callback twice and
+        unsubscribing once leaves one registration.
 
         `player_name` is the short suffix, e.g. "Feishin" → bus name
         `org.mpris.MediaPlayer2.Feishin`.
         """
         with self._lock:
             self._subs.setdefault(player_name, []).append(callback)
+
+        def unsubscribe() -> None:
+            with self._lock:
+                try:
+                    self._subs[player_name].remove(callback)
+                except (KeyError, ValueError):
+                    pass
+
+        return unsubscribe
 
     def state(self, player_name: str) -> dict | None:
         """Snapshot of the player. None if the player isn't running."""

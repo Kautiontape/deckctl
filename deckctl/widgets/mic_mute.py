@@ -14,8 +14,9 @@ class MicMuteWidget:
     def __init__(self, settings: dict, deps: WidgetDeps):
         self._deps = deps
         self.invalidate = None
+        self._unsub = None
         if deps.pipewire is not None:  # type: ignore[attr-defined]
-            deps.pipewire.subscribe(self._on_change)  # type: ignore[attr-defined]
+            self._unsub = deps.pipewire.subscribe(self._on_change)  # type: ignore[attr-defined]
 
     def render(self) -> Image:
         muted = False
@@ -44,3 +45,9 @@ class MicMuteWidget:
         cb = self.invalidate
         if cb is not None:
             cb()
+
+    def dispose(self) -> None:
+        if self._unsub is not None:
+            self._unsub()
+            self._unsub = None
+        self.invalidate = None

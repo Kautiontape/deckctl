@@ -55,9 +55,19 @@ class PipewireService:
 
     # ─── public API ────────────────────────────────────────────────────────
 
-    def subscribe(self, cb: Callable[[], None]) -> None:
+    def subscribe(self, cb: Callable[[], None]) -> Callable[[], None]:
+        """Returns an unsubscribe function — call when the widget goes away."""
         with self._lock:
             self._subs.append(cb)
+
+        def unsubscribe() -> None:
+            with self._lock:
+                try:
+                    self._subs.remove(cb)
+                except ValueError:
+                    pass
+
+        return unsubscribe
 
     def state(self, target: str = DEFAULT_SINK) -> tuple[float, bool]:
         """Returns (volume_fraction, muted). volume in [0.0, 1.5+]."""
