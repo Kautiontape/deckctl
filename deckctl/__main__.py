@@ -100,32 +100,56 @@ class Daemon:
         signal.signal(signal.SIGTERM, lambda *_: self.stop())
         signal.signal(signal.SIGINT, lambda *_: self.stop())
 
-        # Auto-dim watcher (only spawned if enabled).
-        if self.cfg.idle_dim_seconds > 0:
-            self._dimmer_thread = threading.Thread(
-                target=self._dim_loop, name="idle-dimmer", daemon=True,
-            )
-            self._dimmer_thread.start()
+        # Always spawn the dimmer thread; it consults cfg each loop and
+        # stays alive across reloads, so toggling idle_dim_seconds via
+        # SIGHUP works without a full restart.
+        self._dimmer_thread = threading.Thread(
+            target=self._dim_loop, name="idle-dimmer", daemon=True,
+        )
+        self._dimmer_thread.start()
 
         log.info("running. Ctrl-C to stop.")
         self._stop.wait()
         self._shutdown()
 
     def _dim_loop(self) -> None:
-        """Drop brightness when idle for `idle_dim_seconds`. Wakes on key press."""
+        """Drop brightness when idle for `idle_dim_seconds`. Wakes on key press.
+
+        Re-reads `self.cfg` each iteration so SIGHUP reloads take effect
+        without restarting the thread. Stays alive across enable/disable.
+        """
         import time
-        assert self.cfg is not None
-        idle_threshold = self.cfg.idle_dim_seconds
+        last_logged = None
         while not self._stop.is_set():
+            cfg = self.cfg
+            if cfg is None:
+                self._stop.wait(1.0)
+                continue
+            if cfg.idle_dim_seconds <= 0:
+                # Disabled. Restore brightness if we were dimmed.
+                if self._dimmed and self.deck is not None:
+                    try:
+                        self.deck.set_brightness(cfg.brightness)
+                        self._dimmed = False
+                        log.info("auto-dim: disabled via reload, restored")
+                    except Exception:
+                        log.exception("auto-dim restore on disable failed")
+                last_logged = None
+                self._stop.wait(2.0)
+                continue
+            cur = (cfg.idle_dim_seconds, cfg.idle_dim_brightness)
+            if cur != last_logged:
+                log.info("auto-dim active: %ds idle → brightness %d%%", *cur)
+                last_logged = cur
             elapsed = time.monotonic() - self._last_activity
-            if not self._dimmed and elapsed >= idle_threshold:
+            if not self._dimmed and elapsed >= cfg.idle_dim_seconds:
                 if self.deck is not None:
                     try:
-                        self.deck.set_brightness(self.cfg.idle_dim_brightness)
+                        self.deck.set_brightness(cfg.idle_dim_brightness)
                         self._dimmed = True
+                        log.info("auto-dim: dimmed (idle %.1fs)", elapsed)
                     except Exception:
                         log.exception("idle dim failed")
-            # Poll roughly once a second; not worth the precision of a timer.
             self._stop.wait(1.0)
 
     def stop(self) -> None:
@@ -214,6 +238,7 @@ class Daemon:
             try:
                 self.deck.set_brightness(self.cfg.brightness)
                 self._dimmed = False
+                log.info("auto-dim: woke (key %d)", idx)
             except Exception:
                 log.exception("wake brightness restore failed")
         if self.active is None or self.page_stack is None:
