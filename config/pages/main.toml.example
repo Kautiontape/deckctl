@@ -36,9 +36,9 @@ type = "mic_mute"
 [[keys]]
 pos = [0, 1]
 type = "page"
-target = "marks"
-icon = "bookmark-new"
-label = "Marks"
+target = "audio-out"
+icon = "audio-headphones"
+label = "Out"
 
 [[keys]]
 pos = [1, 1]
@@ -67,10 +67,10 @@ label = "BT"
 # Row 2
 [[keys]]
 pos = [0, 2]
-type = "command"
-icon = "system-lock-screen"
-label = "Lock"
-on_press = "swaylock"
+type = "page"
+target = "marks"
+icon = "bookmark-new"
+label = "Marks"
 
 [[keys]]
 pos = [1, 2]
