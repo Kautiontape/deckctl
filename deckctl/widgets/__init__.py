@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from ..services.pipewire import PipewireService
     from ..services.producers import Producer
     from ..services.subsonic import SubsonicService
+    from ..services.sway import SwayService
 
 
 @dataclass
@@ -32,6 +33,7 @@ class WidgetDeps:
     marks: "MarksService | None" = None
     bluez: "BluezService | None" = None
     subsonic: "SubsonicService | None" = None
+    sway: "SwayService | None" = None
     # Dynamic-list producers, keyed by name (e.g. "audio_sink", "bluez").
     # ActivePage looks them up to expand `type = "dynamic"` keys.
     producers: "dict[str, Producer] | None" = None
@@ -83,6 +85,7 @@ from . import mpris_title as _mpris_title  # noqa: E402, F401
 from . import page as _page  # noqa: E402, F401
 from . import sway_mark as _sway_mark  # noqa: E402, F401
 from . import sway_mark_new as _sway_mark_new  # noqa: E402, F401
+from . import sway_workspace as _sway_workspace  # noqa: E402, F401
 from . import volume as _volume  # noqa: E402, F401
 from . import weather as _weather  # noqa: E402, F401
 from . import stubs as _stubs  # noqa: E402, F401  (registers leftover types)

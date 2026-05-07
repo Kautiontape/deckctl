@@ -192,6 +192,7 @@ class Daemon:
         deps.marks = self.marks
         deps.bluez = self.bluez
         deps.subsonic = self.subsonic
+        deps.sway = self.sway
         producers: dict[str, object] = {}
         if self.pipewire is not None:
             producers["audio_sink"] = AudioSinkProducer(self.pipewire)

@@ -71,33 +71,41 @@ icon = "view-restore"
 label = "Resize"
 on_press = "swaymsg mode resize"
 
-# Row 2 — all 5 workspaces
+# Row 2 — all 5 workspaces. The current workspace lights up with a
+# blue top border and dim blue background. Tap to move the focused
+# container to that workspace; long-press to switch focus there
+# without moving the container.
 [[keys]]
 pos = [0, 2]
-type = "command"
-label = "WS 1"
-on_press = "swaymsg move container to workspace 1"
+type = "sway_workspace"
+workspace = 1
+action = "move"
+on_long_press = "swaymsg workspace number 1"
 
 [[keys]]
 pos = [1, 2]
-type = "command"
-label = "WS 2"
-on_press = "swaymsg move container to workspace 2"
+type = "sway_workspace"
+workspace = 2
+action = "move"
+on_long_press = "swaymsg workspace number 2"
 
 [[keys]]
 pos = [2, 2]
-type = "command"
-label = "WS 3"
-on_press = "swaymsg move container to workspace 3"
+type = "sway_workspace"
+workspace = 3
+action = "move"
+on_long_press = "swaymsg workspace number 3"
 
 [[keys]]
 pos = [3, 2]
-type = "command"
-label = "WS 4"
-on_press = "swaymsg move container to workspace 4"
+type = "sway_workspace"
+workspace = 4
+action = "move"
+on_long_press = "swaymsg workspace number 4"
 
 [[keys]]
 pos = [4, 2]
-type = "command"
-label = "WS 5"
-on_press = "swaymsg move container to workspace 5"
+type = "sway_workspace"
+workspace = 5
+action = "move"
+on_long_press = "swaymsg workspace number 5"
