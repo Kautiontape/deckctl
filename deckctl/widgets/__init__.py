@@ -11,6 +11,7 @@ from ..config import KeyDef
 
 if TYPE_CHECKING:
     from ..icons import IconResolver
+    from ..services.ha import HAService
     from ..services.mpris import MprisService
     from ..services.pipewire import PipewireService
 
@@ -23,6 +24,7 @@ class WidgetDeps:
     font: str
     mpris: "MprisService | None" = None
     pipewire: "PipewireService | None" = None
+    ha: "HAService | None" = None
 
 
 class Widget(Protocol):
@@ -58,6 +60,7 @@ def build(key: KeyDef, deps: WidgetDeps) -> Widget:
 
 # Import widget modules so their @register calls take effect.
 from . import command as _command  # noqa: E402, F401
+from . import ha_action as _ha_action  # noqa: E402, F401
 from . import mic_mute as _mic_mute  # noqa: E402, F401
 from . import mpris as _mpris  # noqa: E402, F401
 from . import page as _page  # noqa: E402, F401

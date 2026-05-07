@@ -42,7 +42,10 @@ Numbers map to the build sequence in the design proposal.
         `refresh_minutes` (default 15) on a daemon thread, maps WMO codes
         to FontAwesome cloud/sun/etc. icons. **Deferred:** BlueZ widget
         (same dynamic-list need as audio_sink).
-- [ ] 7. HA actions + secrets handling. Replace `ha_action` stub.
+- [x] 7. `ha_action` widget. Calls REST `/api/services/<domain>/<service>`
+        with optional entity_id and data. Secrets read from
+        `~/.config/deckctl/secrets.env` (HA_URL, HA_TOKEN; gitignored,
+        mode 0600). Daemon logs and no-ops if secrets are absent.
 
 ## Verified end-to-end as of step 2
 

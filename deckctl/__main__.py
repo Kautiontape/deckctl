@@ -14,6 +14,7 @@ from .actions import ActionContext
 from .config import DeckConfig, PageDef, load_deck_config, load_pages, load_secrets
 from .deck import DeckHandle
 from .pages import ActivePage, PageStack, make_widget_deps
+from .services.ha import HAService
 from .services.mpris import MprisService, start_glib_loop
 from .services.pipewire import PipewireService
 
@@ -31,6 +32,7 @@ class Daemon:
         self.active: ActivePage | None = None
         self.mpris: MprisService | None = None
         self.pipewire: PipewireService | None = None
+        self.ha: HAService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
 
@@ -51,6 +53,12 @@ class Daemon:
         except Exception:
             log.exception("pipewire init failed; volume/mic widgets will be inert")
             self.pipewire = None
+        self.ha = HAService(
+            url=self.secrets.get("HA_URL"),
+            token=self.secrets.get("HA_TOKEN"),
+        )
+        if not self.ha.configured:
+            log.info("ha: secrets not set; ha_action keys will be no-ops")
         deck = DeckHandle(serial=self.cfg.serial)
         deck.set_brightness(self.cfg.brightness)
         deck.set_key_callback(self._on_key)
@@ -98,6 +106,7 @@ class Daemon:
         deps = make_widget_deps(self.cfg, self.deck.key_size)
         deps.mpris = self.mpris
         deps.pipewire = self.pipewire
+        deps.ha = self.ha
 
         def push(idx: int, image) -> None:
             if self.deck is not None:
