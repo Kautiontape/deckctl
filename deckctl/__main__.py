@@ -44,12 +44,18 @@ class Daemon:
         self.subsonic: SubsonicService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
+        # Idle-dim state.
+        self._last_activity = 0.0
+        self._dimmed = False
+        self._dimmer_thread: threading.Thread | None = None
 
     # ─── lifecycle ────────────────────────────────────────────────────────
 
     def start(self) -> None:
+        import time
         self._load_config()
         assert self.cfg is not None
+        self._last_activity = time.monotonic()
         # GLib + dbus must be set up before MprisService.
         start_glib_loop()
         try:
@@ -94,9 +100,33 @@ class Daemon:
         signal.signal(signal.SIGTERM, lambda *_: self.stop())
         signal.signal(signal.SIGINT, lambda *_: self.stop())
 
+        # Auto-dim watcher (only spawned if enabled).
+        if self.cfg.idle_dim_seconds > 0:
+            self._dimmer_thread = threading.Thread(
+                target=self._dim_loop, name="idle-dimmer", daemon=True,
+            )
+            self._dimmer_thread.start()
+
         log.info("running. Ctrl-C to stop.")
         self._stop.wait()
         self._shutdown()
+
+    def _dim_loop(self) -> None:
+        """Drop brightness when idle for `idle_dim_seconds`. Wakes on key press."""
+        import time
+        assert self.cfg is not None
+        idle_threshold = self.cfg.idle_dim_seconds
+        while not self._stop.is_set():
+            elapsed = time.monotonic() - self._last_activity
+            if not self._dimmed and elapsed >= idle_threshold:
+                if self.deck is not None:
+                    try:
+                        self.deck.set_brightness(self.cfg.idle_dim_brightness)
+                        self._dimmed = True
+                    except Exception:
+                        log.exception("idle dim failed")
+            # Poll roughly once a second; not worth the precision of a timer.
+            self._stop.wait(1.0)
 
     def stop(self) -> None:
         self._stop.set()
@@ -176,6 +206,16 @@ class Daemon:
             self.deck.set_key_image(idx, image)  # type: ignore[arg-type]
 
     def _on_key(self, idx: int, pressed: bool) -> None:
+        import time
+        self._last_activity = time.monotonic()
+        # Wake from idle-dim before processing the press, so users see
+        # full brightness for the action they're doing.
+        if self._dimmed and self.deck is not None and self.cfg is not None:
+            try:
+                self.deck.set_brightness(self.cfg.brightness)
+                self._dimmed = False
+            except Exception:
+                log.exception("wake brightness restore failed")
         if self.active is None or self.page_stack is None:
             return
         if pressed:

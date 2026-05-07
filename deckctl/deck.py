@@ -26,19 +26,24 @@ class DeckHandle:
             raise RuntimeError("no Stream Deck devices found")
 
         chosen = None
-        if serial is not None:
+        # Skip the serial-number probe when there's only one deck — feature
+        # reports on this libhidapi backend can intermittently fail with -1
+        # right after a previous daemon shutdown, and the check is
+        # redundant when there's nothing to disambiguate.
+        if serial is None or len(decks) == 1:
+            chosen = decks[0]
+            chosen.open()
+        else:
             for d in decks:
                 d.open()
                 try:
-                    if d.get_serial_number() == serial:
-                        chosen = d
-                        break
-                finally:
-                    if chosen is not d:
-                        d.close()
-        else:
-            chosen = decks[0]
-            chosen.open()
+                    matched = d.get_serial_number() == serial
+                except Exception:
+                    matched = False
+                if matched:
+                    chosen = d
+                    break
+                d.close()
 
         if chosen is None:
             raise RuntimeError(f"no Stream Deck with serial {serial!r}")

@@ -14,6 +14,10 @@ class DeckConfig:
     brightness: int = 75
     default_page: str = "main"
     font: str = "DejaVu Sans"
+    # Auto-dim: drop to `idle_dim_brightness` after `idle_dim_seconds` of
+    # no key activity. 0 disables. Wakes back to `brightness` on any key.
+    idle_dim_seconds: int = 0
+    idle_dim_brightness: int = 15
     icon_dirs: list[Path] = field(default_factory=list)
     secrets_path: Path | None = None
     config_dir: Path = field(default_factory=lambda: Path("~/.config/deckctl").expanduser())
@@ -48,6 +52,8 @@ def load_deck_config(path: Path) -> DeckConfig:
         brightness=int(deck.get("brightness", 75)),
         default_page=deck.get("default_page", "main"),
         font=deck.get("font", "DejaVu Sans"),
+        idle_dim_seconds=int(deck.get("idle_dim_seconds", 0)),
+        idle_dim_brightness=int(deck.get("idle_dim_brightness", 15)),
         icon_dirs=[_expand(p) for p in paths.get("icons", [])],
         secrets_path=_expand(paths["secrets"]) if "secrets" in paths else None,
         config_dir=path.parent,

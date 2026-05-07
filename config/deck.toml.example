@@ -7,6 +7,12 @@ brightness = 75
 default_page = "main"
 font = "DejaVu Sans"
 
+# Auto-dim: drop to `idle_dim_brightness` after this many seconds with no
+# key activity. Wakes back to `brightness` on any key press. Set to 0 to
+# disable (default).
+# idle_dim_seconds = 120
+# idle_dim_brightness = 15
+
 [paths]
 # Multiple sources, first match wins. Local icons override theme icons.
 # Papirus is split across size buckets; we list the most useful ones. The
