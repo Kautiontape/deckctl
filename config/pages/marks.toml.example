@@ -1,0 +1,85 @@
+# Sway window marks — 12 deck slots, independent of the letter-based marks
+# managed by sway-mark.sh. State lives in /tmp/deckctl-marks.json.
+#
+# Usage:
+#   - Tap an empty slot: nothing (or starts assign mode if New Mark is on).
+#   - Tap a filled slot: focus that window, brings to current workspace.
+#   - Long-press a filled slot: clears the mark.
+#   - "New Mark" / "Cancel" toggles assign mode. While on, tapping any
+#     slot puts the currently focused window in that slot (replacing any
+#     existing entry) and exits assign mode.
+
+[page]
+name = "marks"
+back = "sway"
+
+[[keys]]
+pos = [0, 0]
+type = "command"
+icon = "go-previous"
+label = "Back"
+on_press = "back"
+
+[[keys]]
+pos = [1, 0]
+type = "sway_mark_new"
+
+[[keys]]
+pos = [2, 0]
+type = "sway_mark"
+slot = 1
+
+[[keys]]
+pos = [3, 0]
+type = "sway_mark"
+slot = 2
+
+[[keys]]
+pos = [4, 0]
+type = "sway_mark"
+slot = 3
+
+[[keys]]
+pos = [0, 1]
+type = "sway_mark"
+slot = 4
+
+[[keys]]
+pos = [1, 1]
+type = "sway_mark"
+slot = 5
+
+[[keys]]
+pos = [2, 1]
+type = "sway_mark"
+slot = 6
+
+[[keys]]
+pos = [3, 1]
+type = "sway_mark"
+slot = 7
+
+[[keys]]
+pos = [4, 1]
+type = "sway_mark"
+slot = 8
+
+[[keys]]
+pos = [0, 2]
+type = "sway_mark"
+slot = 9
+
+[[keys]]
+pos = [1, 2]
+type = "sway_mark"
+slot = 10
+
+[[keys]]
+pos = [2, 2]
+type = "sway_mark"
+slot = 11
+
+[[keys]]
+pos = [3, 2]
+type = "sway_mark"
+slot = 12

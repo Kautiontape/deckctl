@@ -70,6 +70,8 @@ the Main page to render.
 
 ## Polish / nice-to-haves
 
+- [ ] Marks page: subscribe to sway window-close events to auto-clear
+      stale slots instead of pruning lazily on activate.
 - [ ] Long-press progress ring rendering (for power-page guards).
 - [ ] Auto-dim deck after N seconds idle, wake on key press.
 - [ ] Per-page brightness override.

@@ -62,10 +62,10 @@ on_press = "~/.config/sway/bin/window-puller.sh"
 
 [[keys]]
 pos = [3, 1]
-type = "command"
+type = "page"
+target = "marks"
 icon = "bookmark-new"
-label = "Mark"
-on_press = "~/.config/sway/bin/sway-mark.sh"
+label = "Marks"
 
 [[keys]]
 pos = [4, 1]

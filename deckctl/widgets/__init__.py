@@ -12,6 +12,7 @@ from ..config import KeyDef
 if TYPE_CHECKING:
     from ..icons import IconResolver
     from ..services.ha import HAService
+    from ..services.marks import MarksService
     from ..services.mpris import MprisService
     from ..services.pipewire import PipewireService
 
@@ -25,6 +26,7 @@ class WidgetDeps:
     mpris: "MprisService | None" = None
     pipewire: "PipewireService | None" = None
     ha: "HAService | None" = None
+    marks: "MarksService | None" = None
 
 
 class Widget(Protocol):
@@ -64,6 +66,8 @@ from . import ha_action as _ha_action  # noqa: E402, F401
 from . import mic_mute as _mic_mute  # noqa: E402, F401
 from . import mpris as _mpris  # noqa: E402, F401
 from . import page as _page  # noqa: E402, F401
+from . import sway_mark as _sway_mark  # noqa: E402, F401
+from . import sway_mark_new as _sway_mark_new  # noqa: E402, F401
 from . import volume as _volume  # noqa: E402, F401
 from . import weather as _weather  # noqa: E402, F401
 from . import stubs as _stubs  # noqa: E402, F401  (registers leftover types)
