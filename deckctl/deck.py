@@ -7,6 +7,7 @@ handles the linear-index ↔ (col, row) translation our config uses.
 from __future__ import annotations
 
 import logging
+import threading
 from typing import Callable
 
 from PIL.Image import Image
@@ -43,6 +44,11 @@ class DeckHandle:
             raise RuntimeError(f"no Stream Deck with serial {serial!r}")
 
         self._deck = chosen
+        # Serializes multi-chunk HID writes (set_key_image, reset, brightness).
+        # Without this, concurrent invalidates from different reactive
+        # services interleave their image chunks on the wire and produce
+        # scrambled keys.
+        self._io_lock = threading.Lock()
         self.cols: int = chosen.KEY_COLS
         self.rows: int = chosen.KEY_ROWS
         self.key_count: int = chosen.key_count()
@@ -58,28 +64,39 @@ class DeckHandle:
                      self.cols, self.rows, self.key_count)
 
     def set_brightness(self, percent: int) -> None:
-        self._deck.set_brightness(max(0, min(100, percent)))
+        with self._io_lock:
+            self._deck.set_brightness(max(0, min(100, percent)))
 
     def reset(self) -> None:
-        self._deck.reset()
+        with self._io_lock:
+            self._deck.reset()
 
     def close(self) -> None:
-        try:
-            self._deck.reset()
-        except Exception:
-            pass
-        try:
-            self._deck.close()
-        except Exception:
-            pass
+        with self._io_lock:
+            try:
+                self._deck.reset()
+            except Exception:
+                pass
+            try:
+                self._deck.close()
+            except Exception:
+                pass
 
     def set_key_image(self, idx: int, image: Image | None) -> None:
-        """Push a PIL image to a key. None blanks the key."""
+        """Push a PIL image to a key. None blanks the key.
+
+        Holds `_io_lock` for the duration of the multi-chunk HID write so
+        concurrent calls from different threads don't interleave on the wire.
+        """
         if image is None:
-            self._deck.set_key_image(idx, None)  # type: ignore[arg-type]
+            with self._io_lock:
+                self._deck.set_key_image(idx, None)  # type: ignore[arg-type]
             return
+        # PILHelper.to_native_key_format does pure-CPU work; do it outside
+        # the lock to keep contention short.
         native = PILHelper.to_native_key_format(self._deck, image)
-        self._deck.set_key_image(idx, native)
+        with self._io_lock:
+            self._deck.set_key_image(idx, native)
 
     def set_key_callback(self, fn: Callable[[int, bool], None]) -> None:
         """Register a (key_idx, pressed) callback."""
