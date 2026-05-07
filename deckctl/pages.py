@@ -96,6 +96,10 @@ class ActivePage:
         # widgets keyed by linear key index
         self.widgets: dict[int, Widget] = {}
         self.long_press_ms: dict[int, int] = {}
+        # Indices whose `long_press_ms` was explicitly set in TOML (i.e.
+        # a real long-press gate, not the implicit default). Only those
+        # get the progress-ring animation.
+        self._long_press_explicit: set[int] = set()
         self._press_starts: dict[int, float] = {}
         # Per-key threads that animate a progress ring during a held press.
         self._press_anim_stops: dict[int, threading.Event] = {}
@@ -129,12 +133,15 @@ class ActivePage:
         self.long_press_ms[idx] = int(
             kdef.settings.get("long_press_ms", self.long_press_default_ms)
         )
+        if "long_press_ms" in kdef.settings:
+            self._long_press_explicit.add(idx)
         w.invalidate = self._invalidator_for(idx, w)
         return idx
 
     def _remove_widget(self, idx: int) -> None:
         w = self.widgets.pop(idx, None)
         self.long_press_ms.pop(idx, None)
+        self._long_press_explicit.discard(idx)
         if w is None:
             return
         disp = getattr(w, "dispose", None)
@@ -193,10 +200,10 @@ class ActivePage:
     def handle_press(self, idx: int) -> None:
         self._press_starts[idx] = time.monotonic()
         threshold = self.long_press_ms.get(idx, self.long_press_default_ms)
-        # Only show a progress arc when the key was explicitly configured
-        # for a longer hold (e.g. power-page guards). For default 800ms
-        # taps it would feel laggy.
-        if threshold >= 500 and self._push is not None:
+        # Only animate on keys that explicitly opted into a long-press gate.
+        # All other keys keep the default threshold but get no visual arc,
+        # avoiding a flash on routine taps.
+        if idx in self._long_press_explicit and self._push is not None:
             stop = threading.Event()
             self._press_anim_stops[idx] = stop
             threading.Thread(
@@ -209,6 +216,7 @@ class ActivePage:
     def handle_release(self, idx: int, ctx) -> None:
         started = self._press_starts.pop(idx, None)
         stop = self._press_anim_stops.pop(idx, None)
+        had_animation = stop is not None
         if stop is not None:
             stop.set()
         widget = self.widgets.get(idx)
@@ -225,12 +233,18 @@ class ActivePage:
                 widget.on_press(ctx)
         except Exception:
             log.exception("widget action raised at idx %d", idx)
-        # Restore the widget's normal render so the progress arc clears.
-        if self._push is not None:
+        # Only restore the widget's base render if we'd actually drawn an
+        # arc on top — otherwise the deck already shows the right image
+        # and the extra push is wasted (and could flicker reactive widgets).
+        if had_animation and self._push is not None:
             try:
                 self._push(idx, widget.render())
             except Exception:
                 log.exception("widget render after release at idx %d", idx)
+
+    # Below this fraction of the threshold no arc is drawn, so a quick
+    # touch-and-release on a long-press key doesn't flash anything.
+    PROGRESS_VISIBLE_AT = 0.25
 
     def _animate_press(self, idx: int, threshold_ms: int, stop: threading.Event) -> None:
         """Push a progress-arc-overlaid frame at ~20Hz while a key is held."""
@@ -247,6 +261,11 @@ class ActivePage:
         while not stop.is_set():
             elapsed_ms = (time.monotonic() - started) * 1000
             progress = min(1.0, elapsed_ms / threshold_ms)
+            # Don't render the arc until the user has clearly committed to
+            # a hold. Quick taps below this threshold get no visual at all.
+            if progress < self.PROGRESS_VISIBLE_AT:
+                stop.wait(0.05)
+                continue
             # Skip redraw if visually unchanged (within 2% of last frame).
             if abs(progress - last_progress) >= 0.02:
                 last_progress = progress
