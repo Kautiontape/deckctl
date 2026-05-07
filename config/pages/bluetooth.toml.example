@@ -1,0 +1,22 @@
+# Bluetooth devices. Dynamic region expands to one button per paired
+# device. Connected devices get a blue top border. Tap to toggle
+# connect/disconnect.
+
+[page]
+name = "bluetooth"
+back = "main"
+
+[[keys]]
+pos = [0, 0]
+type = "command"
+icon = "go-previous"
+label = "Back"
+on_press = "back"
+
+# Dynamic region for paired devices. Starts at (1, 0) so it gets the
+# 14 most-visible slots of the page.
+[[keys]]
+pos = [1, 0]
+type = "dynamic"
+producer = "bluez"
+slots = 14

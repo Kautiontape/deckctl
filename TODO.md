@@ -69,10 +69,12 @@ Things added on top of #1-#7 that are also live:
       `AudioSinkProducer` (wraps PipewireService); current default
       flagged with a green top border. Tap to switch. Reactive on
       pactl subscribe events.
-- [ ] **`bluez` widget.** Mirror of audio_sink but over BlueZ D-Bus
-      (`bluetoothctl devices Paired` for the list, `bluetoothctl info
-      <mac>` for connect state, `bluetoothctl monitor` or D-Bus
-      PropertiesChanged for reactivity). Wires the "BT" key on Main.
+- [x] **`bluez` widget.** Lists paired devices via BlueZ ObjectManager
+      (system bus). Connected devices flagged with a blue top border;
+      tap toggles connect/disconnect. Reactive on Device1
+      PropertiesChanged + InterfacesAdded/Removed signals. Icons come
+      from BlueZ's `Icon` property (audio-headset, phone, etc.) which
+      maps directly to Papirus device icons.
 
 ## Polish / nice-to-haves
 

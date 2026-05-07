@@ -11,6 +11,7 @@ from ..config import KeyDef
 
 if TYPE_CHECKING:
     from ..icons import IconResolver
+    from ..services.bluez import BluezService
     from ..services.ha import HAService
     from ..services.marks import MarksService
     from ..services.mpris import MprisService
@@ -28,6 +29,7 @@ class WidgetDeps:
     pipewire: "PipewireService | None" = None
     ha: "HAService | None" = None
     marks: "MarksService | None" = None
+    bluez: "BluezService | None" = None
     # Dynamic-list producers, keyed by name (e.g. "audio_sink", "bluez").
     # ActivePage looks them up to expand `type = "dynamic"` keys.
     producers: "dict[str, Producer] | None" = None
@@ -66,6 +68,7 @@ def build(key: KeyDef, deps: WidgetDeps) -> Widget:
 
 # Import widget modules so their @register calls take effect.
 from . import audio_sink as _audio_sink  # noqa: E402, F401
+from . import bluez as _bluez  # noqa: E402, F401
 from . import command as _command  # noqa: E402, F401
 from . import ha_action as _ha_action  # noqa: E402, F401
 from . import mic_mute as _mic_mute  # noqa: E402, F401

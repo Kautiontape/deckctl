@@ -14,11 +14,12 @@ from .actions import ActionContext
 from .config import DeckConfig, PageDef, load_deck_config, load_pages, load_secrets
 from .deck import DeckHandle
 from .pages import ActivePage, PageStack, make_widget_deps
+from .services.bluez import BluezService
 from .services.ha import HAService
 from .services.marks import MarksService
 from .services.mpris import MprisService, start_glib_loop
 from .services.pipewire import PipewireService
-from .services.producers import AudioSinkProducer
+from .services.producers import AudioSinkProducer, BluezProducer
 from .services.sway import SwayService
 
 log = logging.getLogger("deckctl")
@@ -38,6 +39,7 @@ class Daemon:
         self.ha: HAService | None = None
         self.sway: SwayService | None = None
         self.marks: MarksService | None = None
+        self.bluez: BluezService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
 
@@ -66,6 +68,11 @@ class Daemon:
             log.info("ha: secrets not set; ha_action keys will be no-ops")
         self.sway = SwayService()
         self.marks = MarksService(self.sway)
+        try:
+            self.bluez = BluezService()
+        except Exception:
+            log.exception("bluez init failed; bluetooth widgets will be inert")
+            self.bluez = None
         deck = DeckHandle(serial=self.cfg.serial)
         deck.set_brightness(self.cfg.brightness)
         deck.set_key_callback(self._on_key)
@@ -118,9 +125,12 @@ class Daemon:
         deps.pipewire = self.pipewire
         deps.ha = self.ha
         deps.marks = self.marks
+        deps.bluez = self.bluez
         producers: dict[str, object] = {}
         if self.pipewire is not None:
             producers["audio_sink"] = AudioSinkProducer(self.pipewire)
+        if self.bluez is not None:
+            producers["bluez"] = BluezProducer(self.bluez)
         deps.producers = producers  # type: ignore[assignment]
 
         def push(idx: int, image) -> None:
