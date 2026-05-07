@@ -75,17 +75,29 @@ class MarksService:
         self._fire()
 
     def activate(self, slot: int) -> bool:
-        """Focus the window in `slot`. Returns True if a window was focused."""
+        """Toggle the window in `slot` between visible and scratchpad-buried.
+
+        Returns True if a window was acted on. If the window is currently
+        visible on a workspace, this buries it (moves to scratchpad). If
+        it's hidden in scratchpad (or just not currently focused on a
+        visible workspace), this brings it back. Stale slots are cleared.
+        """
         info = self._slots.get(slot)
         if not info:
             return False
         con_id = int(info["con_id"])
-        # Validate con_id still exists; clear if stale.
-        if self.sway.find_con(con_id) is None:
+        node = self.sway.find_con(con_id)
+        if node is None:
             log.info("marks: slot %d con_id=%d is stale; clearing", slot, con_id)
             self.clear(slot)
             return False
-        self.sway.focus_con(con_id)
+        if node.get("visible"):
+            self.sway.bury_con(con_id)
+        else:
+            self.sway.focus_con(con_id)
+        # No state change persists in our slot file (only sway tree changes),
+        # but we fire so any UI that wants to reflect visibility can re-render.
+        self._fire()
         return True
 
     def assign_focused(self, slot: int) -> bool:

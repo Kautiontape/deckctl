@@ -24,19 +24,14 @@ icon = "view-list-details"
 label = "Stacked"
 on_press = "swaymsg layout stacking"
 
+# Single split key — toggles the parent container's orientation between
+# horizontal and vertical via sway's built-in `split toggle`.
 [[keys]]
 pos = [3, 0]
 type = "command"
 icon = "object-flip-horizontal"
-label = "Split H"
-on_press = "swaymsg split h"
-
-[[keys]]
-pos = [4, 0]
-type = "command"
-icon = "object-flip-vertical"
-label = "Split V"
-on_press = "swaymsg split v"
+label = "Split"
+on_press = "swaymsg split toggle"
 
 # Row 1
 [[keys]]
@@ -62,19 +57,12 @@ on_press = "~/.config/sway/bin/window-puller.sh"
 
 [[keys]]
 pos = [3, 1]
-type = "page"
-target = "marks"
-icon = "bookmark-new"
-label = "Marks"
-
-[[keys]]
-pos = [4, 1]
 type = "command"
 icon = "view-restore"
 label = "Resize"
-on_press = 'swaymsg mode resize'
+on_press = "swaymsg mode resize"
 
-# Row 2 — workspaces
+# Row 2 — all 5 workspaces
 [[keys]]
 pos = [0, 2]
 type = "command"
@@ -102,6 +90,5 @@ on_press = "swaymsg move container to workspace 4"
 [[keys]]
 pos = [4, 2]
 type = "command"
-icon = "view-refresh"
-label = "Reload"
-on_press = "swaymsg reload"
+label = "WS 5"
+on_press = "swaymsg move container to workspace 5"

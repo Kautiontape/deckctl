@@ -50,7 +50,7 @@ DEFAULT_INI = "~/.config/sway/scratchpad-config.ini"
 DEFAULT_OUT = "~/.config/deckctl/pages/scratchpads.toml"
 LAUNCH_HELPER = "~/.config/sway/bin/sway-scratchpad-launch.sh"
 
-BACK_POS = (0, 2)
+BACK_POS = (0, 0)
 COLS, ROWS = 5, 3
 
 

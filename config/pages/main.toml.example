@@ -36,9 +36,9 @@ type = "mic_mute"
 [[keys]]
 pos = [0, 1]
 type = "page"
-target = "audio-out"
-icon = "audio-headphones"
-label = "Out"
+target = "marks"
+icon = "bookmark-new"
+label = "Marks"
 
 [[keys]]
 pos = [1, 1]

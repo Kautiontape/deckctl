@@ -61,6 +61,17 @@ class SwayService:
         )
         self._swaymsg([cmd])
 
+    def bury_con(self, con_id: int) -> None:
+        """Send a window to sway's global scratchpad."""
+        self._swaymsg([f"[con_id={con_id}] move scratchpad"])
+
+    def is_visible(self, con_id: int) -> bool:
+        """True if the window is currently on a workspace; False if hidden in scratchpad."""
+        node = self.find_con(con_id)
+        if node is None:
+            return False
+        return bool(node.get("visible"))
+
 
 def _find(node: dict, pred) -> dict | None:
     if pred(node):
