@@ -10,6 +10,34 @@ from PIL import Image, ImageDraw, ImageFont
 from .icons import IconResolver
 
 
+def overlay_progress_arc(
+    base: "Image.Image",
+    progress: float,
+    *,
+    color: tuple[int, int, int, int] = (255, 200, 60, 240),
+    width: int = 5,
+    inset: int = 4,
+) -> "Image.Image":
+    """Return a copy of `base` with a clockwise progress arc on top.
+
+    `progress` is clamped to [0, 1]. The arc starts at 12 o'clock and
+    grows clockwise. Used by the power page to give visible feedback while
+    a destructive long-press is being held.
+    """
+    progress = max(0.0, min(1.0, progress))
+    out = base.copy().convert("RGB")
+    if progress <= 0:
+        return out
+    overlay = Image.new("RGBA", out.size, (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    bbox = (inset, inset, out.size[0] - inset, out.size[1] - inset)
+    sweep = progress * 360
+    # Pillow's arc: start/end angles in degrees, 0 is east. Shift so 0 is
+    # north (top) and we grow clockwise.
+    od.arc(bbox, start=-90, end=-90 + sweep, fill=color, width=width)
+    return Image.alpha_composite(out.convert("RGBA"), overlay).convert("RGB")
+
+
 @lru_cache(maxsize=8)
 def _font_path(family: str) -> str | None:
     """Resolve a font family to a file path via fc-match. None if unavailable."""

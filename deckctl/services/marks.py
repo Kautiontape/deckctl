@@ -32,6 +32,29 @@ class MarksService:
         self._assign_mode: bool = False
         self._subs: list[Callable[[], None]] = []
         self._load()
+        # Listen for window-close events so we can drop stale marks the
+        # moment a window goes away (instead of waiting for the user to
+        # tap a dead slot).
+        sub = getattr(sway, "subscribe_window_events", None)
+        if sub is not None:
+            sub(self._on_window_event)
+
+    def _on_window_event(self, event: dict) -> None:
+        if event.get("change") != "close":
+            return
+        closed_id = (event.get("container") or {}).get("id")
+        if closed_id is None:
+            return
+        cleared: list[int] = []
+        for slot, info in list(self._slots.items()):
+            if info and int(info.get("con_id", 0)) == int(closed_id):
+                self._slots[slot] = None
+                cleared.append(slot)
+        if cleared:
+            log.info("marks: cleared slot(s) %s after window close (con_id=%s)",
+                     cleared, closed_id)
+            self._save()
+            self._fire()
 
     # ─── public state ─────────────────────────────────────────────────────
 

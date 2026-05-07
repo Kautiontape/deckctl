@@ -8,11 +8,13 @@ the deck.
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from typing import Callable
 
 from .config import DeckConfig, KeyDef, PageDef
 from .icons import IconResolver
+from .render import overlay_progress_arc
 from .widgets import Widget, WidgetDeps, build
 
 log = logging.getLogger(__name__)
@@ -95,6 +97,8 @@ class ActivePage:
         self.widgets: dict[int, Widget] = {}
         self.long_press_ms: dict[int, int] = {}
         self._press_starts: dict[int, float] = {}
+        # Per-key threads that animate a progress ring during a held press.
+        self._press_anim_stops: dict[int, threading.Event] = {}
         # Dynamic regions: each holds its own producer subscription and
         # tracks which indices it currently owns so it can rebuild.
         self._regions: list[_DynamicRegion] = []
@@ -188,9 +192,25 @@ class ActivePage:
 
     def handle_press(self, idx: int) -> None:
         self._press_starts[idx] = time.monotonic()
+        threshold = self.long_press_ms.get(idx, self.long_press_default_ms)
+        # Only show a progress arc when the key was explicitly configured
+        # for a longer hold (e.g. power-page guards). For default 800ms
+        # taps it would feel laggy.
+        if threshold >= 500 and self._push is not None:
+            stop = threading.Event()
+            self._press_anim_stops[idx] = stop
+            threading.Thread(
+                target=self._animate_press,
+                args=(idx, threshold, stop),
+                name=f"press-anim-{idx}",
+                daemon=True,
+            ).start()
 
     def handle_release(self, idx: int, ctx) -> None:
         started = self._press_starts.pop(idx, None)
+        stop = self._press_anim_stops.pop(idx, None)
+        if stop is not None:
+            stop.set()
         widget = self.widgets.get(idx)
         if widget is None:
             return
@@ -205,6 +225,39 @@ class ActivePage:
                 widget.on_press(ctx)
         except Exception:
             log.exception("widget action raised at idx %d", idx)
+        # Restore the widget's normal render so the progress arc clears.
+        if self._push is not None:
+            try:
+                self._push(idx, widget.render())
+            except Exception:
+                log.exception("widget render after release at idx %d", idx)
+
+    def _animate_press(self, idx: int, threshold_ms: int, stop: threading.Event) -> None:
+        """Push a progress-arc-overlaid frame at ~20Hz while a key is held."""
+        push = self._push
+        if push is None:
+            return
+        widget = self.widgets.get(idx)
+        if widget is None:
+            return
+        started = self._press_starts.get(idx)
+        if started is None:
+            return
+        last_progress = -1.0
+        while not stop.is_set():
+            elapsed_ms = (time.monotonic() - started) * 1000
+            progress = min(1.0, elapsed_ms / threshold_ms)
+            # Skip redraw if visually unchanged (within 2% of last frame).
+            if abs(progress - last_progress) >= 0.02:
+                last_progress = progress
+                try:
+                    base = widget.render()
+                    push(idx, overlay_progress_arc(base, progress))
+                except Exception:
+                    log.exception("press anim render at idx %d", idx)
+            if progress >= 1.0:
+                break
+            stop.wait(0.05)
 
 
 class _DynamicRegion:
