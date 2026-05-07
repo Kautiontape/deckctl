@@ -127,6 +127,8 @@ def main() -> int:
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
     )
+    # PIL spams per-PNG decoder debug lines; never interesting.
+    logging.getLogger("PIL").setLevel(logging.INFO)
 
     Daemon(Path(args.config_dir)).start()
     return 0
