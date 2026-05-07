@@ -70,7 +70,11 @@ class PageStack:
 
 
 class ActivePage:
-    """Holds widget instances for the current page; routes key events."""
+    """Holds widget instances for the current page; routes key events.
+
+    `push` is invoked by reactive widgets via their `invalidate` callback to
+    push a freshly-rendered key image to the deck. The daemon supplies it.
+    """
 
     def __init__(
         self,
@@ -78,12 +82,14 @@ class ActivePage:
         deck_cols: int,
         deck_rows: int,
         deps: WidgetDeps,
+        push: Callable[[int, "object"], None] | None = None,
         long_press_default_ms: int = 800,
     ):
         self.page = page
         self.cols = deck_cols
         self.rows = deck_rows
         self.long_press_default_ms = long_press_default_ms
+        self._push = push
         # widgets keyed by linear key index
         self.widgets: dict[int, Widget] = {}
         self.long_press_ms: dict[int, int] = {}
@@ -105,6 +111,26 @@ class ActivePage:
             self.long_press_ms[idx] = int(
                 kdef.settings.get("long_press_ms", long_press_default_ms)
             )
+            # Bind invalidate so reactive widgets can update themselves.
+            w.invalidate = self._invalidator_for(idx, w)
+
+    def _invalidator_for(self, idx: int, widget: Widget) -> Callable[[], None]:
+        push = self._push
+        if push is None:
+            return lambda: None
+
+        def invalidate() -> None:
+            try:
+                img = widget.render()
+            except Exception:
+                log.exception("widget render failed during invalidate at idx %d", idx)
+                return
+            try:
+                push(idx, img)
+            except Exception:
+                log.exception("push failed at idx %d", idx)
+
+        return invalidate
 
     def render(self) -> dict[int, "object"]:
         """Render all configured keys. Returns idx → PIL.Image."""

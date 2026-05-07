@@ -55,6 +55,6 @@ def _stub_for(type_name: str) -> type:
     return register(type_name)(cls)
 
 
-for _t in ("weather", "mpris", "volume", "mic_mute", "audio_sink", "bluez",
+for _t in ("weather", "volume", "mic_mute", "audio_sink", "bluez",
            "ha_action", "clock"):
     _stub_for(_t)

@@ -3,19 +3,24 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Protocol
+from typing import TYPE_CHECKING, Callable, Protocol
 
 from PIL.Image import Image
 
 from ..config import KeyDef
 
+if TYPE_CHECKING:
+    from ..icons import IconResolver
+    from ..services.mpris import MprisService
+
 
 @dataclass
 class WidgetDeps:
     """Shared services widgets may need at construction time."""
-    icons: object  # IconResolver — typed as object to avoid circular import games
+    icons: "IconResolver"
     key_size: tuple[int, int]
     font: str
+    mpris: "MprisService | None" = None
 
 
 class Widget(Protocol):
@@ -51,5 +56,6 @@ def build(key: KeyDef, deps: WidgetDeps) -> Widget:
 
 # Import widget modules so their @register calls take effect.
 from . import command as _command  # noqa: E402, F401
+from . import mpris as _mpris  # noqa: E402, F401
 from . import page as _page  # noqa: E402, F401
-from . import stubs as _stubs  # noqa: E402, F401
+from . import stubs as _stubs  # noqa: E402, F401  (registers leftover types)

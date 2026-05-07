@@ -28,8 +28,11 @@ Numbers map to the build sequence in the design proposal.
 - [x] 3. Scratchpad page generator. `deckctl-gen-scratchpads` reads the same
         INI sway uses and writes `pages/scratchpads.toml`. Workflow: edit
         INI → run generator → SIGHUP daemon.
-- [ ] 4. `mpris` widget: track text + album art + play/pause. Feishin page.
-        Replace stub registration in `widgets/stubs.py`.
+- [x] 4. `mpris` widget. Track + art + play badge, reactive on D-Bus
+        PropertiesChanged. Album art fetched (HTTP supported for Navidrome's
+        cover-art URLs) and LRU-cached. Direct D-Bus method calls for
+        play/pause, next, prev (no shelling to playerctl). GLib mainloop
+        thread runs alongside the deck reader thread.
 - [ ] 5. `volume`, `mic_mute`, `audio_sink` widgets (PipeWire). Replace stubs.
 - [ ] 6. Weather, BlueZ widgets. Replace stubs.
 - [ ] 7. HA actions + secrets handling. Replace `ha_action` stub.

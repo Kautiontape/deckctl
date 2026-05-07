@@ -14,6 +14,7 @@ from .actions import ActionContext
 from .config import DeckConfig, PageDef, load_deck_config, load_pages, load_secrets
 from .deck import DeckHandle
 from .pages import ActivePage, PageStack, make_widget_deps
+from .services.mpris import MprisService, start_glib_loop
 
 log = logging.getLogger("deckctl")
 
@@ -27,6 +28,7 @@ class Daemon:
         self.secrets: dict[str, str] = {}
         self.page_stack: PageStack | None = None
         self.active: ActivePage | None = None
+        self.mpris: MprisService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
 
@@ -35,6 +37,13 @@ class Daemon:
     def start(self) -> None:
         self._load_config()
         assert self.cfg is not None
+        # GLib + dbus must be set up before MprisService.
+        start_glib_loop()
+        try:
+            self.mpris = MprisService()
+        except Exception:
+            log.exception("mpris init failed; mpris widgets will be inert")
+            self.mpris = None
         deck = DeckHandle(serial=self.cfg.serial)
         deck.set_brightness(self.cfg.brightness)
         deck.set_key_callback(self._on_key)
@@ -80,6 +89,11 @@ class Daemon:
     def _build_active_page(self) -> None:
         assert self.deck is not None and self.cfg is not None
         deps = make_widget_deps(self.cfg, self.deck.key_size)
+        deps.mpris = self.mpris
+
+        def push(idx: int, image) -> None:
+            if self.deck is not None:
+                self.deck.set_key_image(idx, image)
 
         def on_change(page: PageDef) -> None:
             assert self.deck is not None
@@ -88,6 +102,7 @@ class Daemon:
                 deck_cols=self.deck.cols,
                 deck_rows=self.deck.rows,
                 deps=deps,
+                push=push,
             )
             self._draw_active()
 
