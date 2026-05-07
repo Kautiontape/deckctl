@@ -89,14 +89,33 @@ Things added on top of #1-#7 that are also live:
 
 ## Polish / nice-to-haves
 
-- [ ] Marks page: subscribe to sway window-close events to auto-clear
+Done:
+
+- [x] Marks page: subscribe to sway window-close events to auto-clear
       stale slots instead of pruning lazily on activate.
-- [ ] Long-press progress ring rendering (for power-page guards).
-- [ ] Auto-dim deck after N seconds idle, wake on key press.
-- [ ] Per-page brightness override.
-- [ ] State badges on `page` keys (e.g. red dot if a sub-page has an "alarm" state).
-- [ ] Multi-deck support (currently first MK.2 wins).
-- [ ] Hot-reload of icon theme.
+- [x] Long-press progress ring rendering. Opt-in via `long_press_ms` or
+      `on_long_press` in the key's TOML.
+- [x] Auto-dim deck after `idle_dim_seconds` of inactivity, wake on key
+      press. SIGHUP-toggleable; brightness restored before action runs.
+
+Skipped (per user):
+
+- [ ] ~~Per-page brightness override~~ — not useful enough.
+- [ ] ~~Multi-deck support~~ — only one deck.
+
+Open / speculative:
+
+- [ ] State badges on `page` keys. Sub-pages would publish a state
+      (count, alert flag, "active" hint); page widgets render a small
+      overlay (dot, count badge) reflecting it. Useful e.g. for a "BT 2"
+      indicator on Main, or a "marks: 5" hint. Needs concrete use cases
+      to design well.
+- [ ] Hot-reload of icon theme. Low value — the index rebuild on SIGHUP
+      already covers icon-dir changes; this would only help if the user
+      wants live theme switching mid-session.
+- [ ] `dbus:` action prefix. Currently we shell to `dbus-send` for the
+      Open Feishin button. A native `dbus:bus:path:method` action prefix
+      would be cleaner and faster but isn't pressing.
 
 ## Smoke testing
 
