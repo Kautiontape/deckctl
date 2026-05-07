@@ -1,0 +1,16 @@
+# Playlists page — placeholder.
+#
+# Blocked on research (see TODO.md): how to drive Feishin playlist selection
+# from a button. Likely Subsonic API on the backing server, but unconfirmed.
+# Until then this page just provides a back button.
+
+[page]
+name = "playlists"
+back = "feishin"
+
+[[keys]]
+pos = [0, 0]
+type = "command"
+icon = "go-previous"
+label = "Back"
+on_press = "back"

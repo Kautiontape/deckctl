@@ -1,0 +1,19 @@
+[Unit]
+Description=Stream Deck daemon (deckctl)
+After=graphical-session.target sound.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/deckctl
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=2
+
+# Don't keep the unit alive forever if the deck is unplugged and we can't
+# reconnect. Let udev re-trigger on plug.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Install]
+WantedBy=graphical-session.target

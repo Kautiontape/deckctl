@@ -1,0 +1,40 @@
+[page]
+name = "ha"
+back = "main"
+
+# All ha_action calls require ~/.config/deckctl/secrets.env to provide HA_URL
+# and HA_TOKEN. See secrets.env.example.
+
+[[keys]]
+pos = [0, 0]
+type = "command"
+icon = "go-previous"
+label = "Back"
+on_press = "back"
+
+# Office speaker mute toggle. The HA script encapsulates the logic; we just
+# fire it.
+[[keys]]
+pos = [1, 0]
+type = "ha_action"
+service = "script.toggle_mute_office_speaker"
+icon = "audio-volume-muted"
+label = "Office Mute"
+
+# Office speaker volume up/down via media_player domain.
+# (HA's "Britney Speaker" entity is the office speaker — legacy naming.)
+[[keys]]
+pos = [2, 0]
+type = "ha_action"
+service = "media_player.volume_down"
+target = "media_player.britney_speaker"
+icon = "audio-volume-low"
+label = "Office −"
+
+[[keys]]
+pos = [3, 0]
+type = "ha_action"
+service = "media_player.volume_up"
+target = "media_player.britney_speaker"
+icon = "audio-volume-high"
+label = "Office +"

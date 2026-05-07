@@ -1,0 +1,18 @@
+# Stream Deck root config. Copy to ~/.config/deckctl/deck.toml.
+
+[deck]
+# Optional. If unset, the first detected MK.2 wins.
+serial = "DL26L2A88614"
+brightness = 75
+default_page = "main"
+font = "DejaVu Sans"
+
+[paths]
+icons = [
+    "~/.config/deckctl/icons",
+    "/usr/share/icons/Papirus-Dark/24x24",
+]
+secrets = "~/.config/deckctl/secrets.env"
+
+[reload]
+watch = ["~/.config/deckctl/pages", "~/.config/deckctl/deck.toml"]

@@ -1,0 +1,49 @@
+[page]
+name = "power"
+back = "main"
+
+[[keys]]
+pos = [0, 0]
+type = "command"
+icon = "go-previous"
+label = "Back"
+on_press = "back"
+
+# Lock and Suspend fire on tap — easy to recover from.
+[[keys]]
+pos = [1, 1]
+type = "command"
+icon = "system-lock-screen"
+label = "Lock"
+on_press = "swaylock"
+
+[[keys]]
+pos = [2, 1]
+type = "command"
+icon = "system-suspend"
+label = "Suspend"
+on_press = "systemctl suspend"
+
+[[keys]]
+pos = [3, 1]
+type = "command"
+icon = "system-log-out"
+label = "Logout"
+on_press = "swaymsg exit"
+
+# Reboot and Shutdown require press-and-hold ≥ 1s. Tap is a no-op.
+[[keys]]
+pos = [1, 2]
+type = "command"
+icon = "view-refresh"
+label = "Reboot"
+on_long_press = "systemctl reboot"
+long_press_ms = 1000
+
+[[keys]]
+pos = [3, 2]
+type = "command"
+icon = "system-shutdown"
+label = "Off"
+on_long_press = "systemctl poweroff"
+long_press_ms = 1000

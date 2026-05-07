@@ -1,0 +1,107 @@
+[page]
+name = "sway"
+back = "main"
+
+# Row 0
+[[keys]]
+pos = [0, 0]
+type = "command"
+icon = "go-previous"
+label = "Back"
+on_press = "back"
+
+[[keys]]
+pos = [1, 0]
+type = "command"
+icon = "view-list"
+label = "Tabbed"
+on_press = "swaymsg layout tabbed"
+
+[[keys]]
+pos = [2, 0]
+type = "command"
+icon = "view-list-details"
+label = "Stacked"
+on_press = "swaymsg layout stacking"
+
+[[keys]]
+pos = [3, 0]
+type = "command"
+icon = "object-flip-horizontal"
+label = "Split H"
+on_press = "swaymsg split h"
+
+[[keys]]
+pos = [4, 0]
+type = "command"
+icon = "object-flip-vertical"
+label = "Split V"
+on_press = "swaymsg split v"
+
+# Row 1
+[[keys]]
+pos = [0, 1]
+type = "command"
+icon = "view-restore"
+label = "Float"
+on_press = "swaymsg floating toggle"
+
+[[keys]]
+pos = [1, 1]
+type = "command"
+icon = "view-fullscreen"
+label = "Full"
+on_press = "swaymsg fullscreen toggle"
+
+[[keys]]
+pos = [2, 1]
+type = "command"
+icon = "go-jump"
+label = "Pull"
+on_press = "~/.config/sway/bin/window-puller.sh"
+
+[[keys]]
+pos = [3, 1]
+type = "command"
+icon = "bookmark-new"
+label = "Mark"
+on_press = "~/.config/sway/bin/sway-mark.sh"
+
+[[keys]]
+pos = [4, 1]
+type = "command"
+icon = "view-restore"
+label = "Resize"
+on_press = 'swaymsg mode resize'
+
+# Row 2 — workspaces
+[[keys]]
+pos = [0, 2]
+type = "command"
+label = "→ 1"
+on_press = "swaymsg move container to workspace 1"
+
+[[keys]]
+pos = [1, 2]
+type = "command"
+label = "→ 2"
+on_press = "swaymsg move container to workspace 2"
+
+[[keys]]
+pos = [2, 2]
+type = "command"
+label = "→ 3"
+on_press = "swaymsg move container to workspace 3"
+
+[[keys]]
+pos = [3, 2]
+type = "command"
+label = "→ 4"
+on_press = "swaymsg move container to workspace 4"
+
+[[keys]]
+pos = [4, 2]
+type = "command"
+icon = "view-refresh"
+label = "Reload"
+on_press = "swaymsg reload"

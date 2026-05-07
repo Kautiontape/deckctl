@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deckctl"
+version = "0.0.1"
+description = "Stream Deck daemon for Linux/Sway with TOML config"
+requires-python = ">=3.11"
+authors = [{ name = "Shawn Squire" }]
+license = { text = "MIT" }
+dependencies = [
+    "streamdeck>=0.9.8",
+    "Pillow>=10",
+    "dbus-python>=1.3",
+    "PyGObject>=3.46",
+]
+
+[project.scripts]
+deckctl = "deckctl.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["deckctl*"]
