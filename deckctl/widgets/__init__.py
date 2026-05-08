@@ -76,6 +76,7 @@ from . import audio_source as _audio_source  # noqa: E402, F401
 from . import bluez as _bluez  # noqa: E402, F401
 from . import command as _command  # noqa: E402, F401
 from . import ha_action as _ha_action  # noqa: E402, F401
+from . import ha_toggle as _ha_toggle  # noqa: E402, F401
 from . import mic_mute as _mic_mute  # noqa: E402, F401
 from . import mpris as _mpris  # noqa: E402, F401
 from . import mpris_loop as _mpris_loop  # noqa: E402, F401

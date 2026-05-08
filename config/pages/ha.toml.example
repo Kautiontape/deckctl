@@ -12,14 +12,17 @@ icon = "go-previous"
 label = "Back"
 on_press = "back"
 
-# Office speaker mute toggle. The HA script encapsulates the logic; we just
-# fire it.
+# Office speaker mute toggle. Reflects current is_volume_muted state and
+# tints green when muted; tap fires the HA script that handles the toggle.
 [[keys]]
 pos = [1, 0]
-type = "ha_action"
+type = "ha_toggle"
+entity = "media_player.britney_speaker"
+attribute = "is_volume_muted"
 service = "script.toggle_mute_office_speaker"
-icon = "audio-volume-muted"
-label = "Office Mute"
+icon_on = "audio-volume-muted"
+icon_off = "audio-volume-high"
+label = "Office"
 
 # Office speaker volume up/down via media_player domain.
 # (HA's "Britney Speaker" entity is the office speaker — legacy naming.)
