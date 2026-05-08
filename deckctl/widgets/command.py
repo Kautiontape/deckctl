@@ -16,6 +16,7 @@ class CommandWidget:
         self.label: str | None = settings.get("label")
         self.on_press_action: str | None = settings.get("on_press")
         self.on_long_press_action: str | None = settings.get("on_long_press")
+        self.icon_scale = settings.get("icon_scale")
         self._deps = deps
         self.invalidate = None  # set by the page renderer
 
@@ -26,6 +27,7 @@ class CommandWidget:
             icon=self.icon,
             label=self.label,
             font_family=self._deps.font,
+            icon_scale=self.icon_scale,
         )
 
     def on_press(self, ctx) -> None:

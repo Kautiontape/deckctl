@@ -62,6 +62,17 @@ def _font(family: str, size: int):
     return ImageFont.load_default()
 
 
+# Default icon size as a fraction of the key's available area (i.e. key
+# height minus label strip if present). Picked low enough that icons
+# from different families (Papirus app icons with tight viewboxes,
+# FontAwesome with generous padding, etc.) read as visually similar in
+# size, with a clear margin around the glyph.
+DEFAULT_ICON_SCALE_WITH_LABEL = 0.55
+DEFAULT_ICON_SCALE_NO_LABEL = 0.70
+
+LABEL_STRIP_HEIGHT = 14
+
+
 def render_key(
     *,
     size: tuple[int, int],
@@ -71,28 +82,41 @@ def render_key(
     font_family: str = "DejaVu Sans",
     bg: tuple[int, int, int] = (0, 0, 0),
     fg: tuple[int, int, int] = (255, 255, 255),
+    icon_scale: float | None = None,
 ) -> Image.Image:
-    """Compose a key. Icon is centered, label sits at the bottom."""
+    """Compose a key. Icon is centered above the label (if any).
+
+    `icon_scale` is a multiplier on the available square area — `0.55`
+    means the icon takes 55% of the smaller of (key width, available
+    height). Per-key override lets specific icons that read small at the
+    default scale (e.g. wide icons that get squished) bump up.
+    """
     w, h = size
     canvas = Image.new("RGB", size, bg)
 
     if icon:
-        # Reserve bottom strip for label if present.
-        icon_box = (h - 14) if label else int(h * 0.85)
-        img = icons.load(icon, size=icon_box)
+        label_strip = LABEL_STRIP_HEIGHT if label else 0
+        available_h = h - label_strip
+        scale = icon_scale if icon_scale is not None else (
+            DEFAULT_ICON_SCALE_WITH_LABEL if label else DEFAULT_ICON_SCALE_NO_LABEL
+        )
+        icon_size = max(8, int(min(w, available_h) * scale))
+        img = icons.load(icon, size=icon_size)
         if img is not None:
             x = (w - img.width) // 2
-            y = (icon_box - img.height) // 2
+            # Center the icon within the area ABOVE the label strip, not
+            # within the whole key — gives consistent visible breathing
+            # room between icon bottom and label top.
+            y = (available_h - img.height) // 2
             canvas.paste(img, (x, y), img if img.mode == "RGBA" else None)
 
     if label:
         draw = ImageDraw.Draw(canvas)
         font = _font(font_family, 11)
-        # Right-anchor measured width to compute centering.
         bbox = draw.textbbox((0, 0), label, font=font)
         tw = bbox[2] - bbox[0]
         x = (w - tw) // 2
-        y = h - 14
+        y = h - LABEL_STRIP_HEIGHT
         draw.text((x, y), label, font=font, fill=fg)
 
     return canvas

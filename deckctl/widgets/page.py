@@ -16,6 +16,7 @@ class PageWidget:
         self.label: str | None = settings.get("label")
         self.target: str = settings["target"]
         self.on_long_press_action: str | None = settings.get("on_long_press")
+        self.icon_scale = settings.get("icon_scale")
         self._deps = deps
         self.invalidate = None
 
@@ -26,6 +27,7 @@ class PageWidget:
             icon=self.icon,
             label=self.label,
             font_family=self._deps.font,
+            icon_scale=self.icon_scale,
         )
 
     def on_press(self, ctx) -> None:
