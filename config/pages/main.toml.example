@@ -25,13 +25,16 @@ label = "Next"
 on_press = "playerctl --player=Feishin next"
 on_long_press = "playerctl --player=Feishin previous"
 
-# Audio output picker, sits next to mic for an "audio devices" cluster.
+# Audio output picker. Long-press → Bluetooth, mirroring the Mic key's
+# short=mute / long=audio-in pattern. Keeps Main compact: tap for the
+# common case (switch sink), hold for the rare one (manage BT).
 [[keys]]
 pos = [3, 0]
 type = "page"
 target = "audio-out"
 icon = "audio-headphones"
 label = "Out"
+on_long_press = "page:bluetooth"
 
 # Mic mute on tap; long-press opens the input picker.
 [[keys]]
@@ -39,14 +42,9 @@ pos = [4, 0]
 type = "mic_mute"
 on_long_press = "page:audio-in"
 
-# Row 1 — recents: 4 most-recently-focused windows (excluding the
-# current one). Tap to focus that window. Auto-fills as you work; no
-# config required.
-[[keys]]
-pos = [0, 1]
-type = "dynamic"
-producer = "recents"
-slots = 4
+# Row 1 — intentionally empty. Volume keys are on a separate hardware
+# device; recents was tried but the focus-stealing was disruptive and
+# the icon flux made Main feel cluttered.
 
 # Row 2
 [[keys]]
@@ -84,11 +82,3 @@ target = "power"
 icon = "system-shutdown"
 label = "Power"
 
-# Row 1 placeholder until recents lands. BT moves up if/when we want it
-# back on Main; for now we'll just access via Audio Out → BT path.
-[[keys]]
-pos = [4, 1]
-type = "page"
-target = "bluetooth"
-icon = "bluetooth"
-label = "BT"

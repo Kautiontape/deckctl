@@ -51,6 +51,9 @@ class Daemon:
         self.subsonic: SubsonicService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
+        # 0 = normal shutdown; 1 = abnormal (watchdog set this when it gave
+        # up reconnecting). Lets systemd restart-on-failure see a real fail.
+        self._exit_code = 0
         # Idle-dim state.
         self._last_activity = 0.0
         self._dimmed = False
@@ -116,9 +119,71 @@ class Daemon:
         )
         self._dimmer_thread.start()
 
+        # Disconnect watchdog: if the deck stops responding (typically a
+        # USB drop on suspend/resume), tries to reconnect a few times then
+        # exits non-zero so a supervisor (systemd) can restart us.
+        self._watchdog_thread = threading.Thread(
+            target=self._watchdog_loop, name="deck-watchdog", daemon=True,
+        )
+        self._watchdog_thread.start()
+
         log.info("running. Ctrl-C to stop.")
         self._stop.wait()
         self._shutdown()
+
+    def _watchdog_loop(self) -> None:
+        """Notice when the deck disconnects and try to bring it back.
+
+        Runs at 1Hz. If `deck.connected` is False, attempts up to 3
+        reconnects with 3s delays. On success, restores brightness and
+        redraws the active page. On final failure, signals the daemon
+        to stop with a non-zero exit so a supervisor can restart us.
+        """
+        import time
+        while not self._stop.is_set():
+            self._stop.wait(1.0)
+            if self._stop.is_set():
+                return
+            if self.deck is None or self.deck.connected:
+                continue
+
+            log.warning("deck: disconnected, attempting reconnect")
+            recovered = False
+            for attempt in range(1, 4):
+                self._stop.wait(3.0)
+                if self._stop.is_set():
+                    return
+                try:
+                    self._reconnect_deck()
+                    recovered = True
+                    log.info("deck: reconnected after attempt %d", attempt)
+                    break
+                except Exception:
+                    log.warning("deck: reconnect attempt %d failed", attempt)
+            if recovered:
+                continue
+            log.error("deck: gave up reconnecting after 3 attempts; exiting")
+            # Non-zero exit so systemd restart-on-failure kicks in.
+            self._exit_code = 1
+            self._stop.set()
+            return
+
+    def _reconnect_deck(self) -> None:
+        """Tear down the dead handle, open a fresh one, redraw."""
+        old = self.deck
+        if old is not None:
+            try:
+                old.close()
+            except Exception:
+                pass
+        assert self.cfg is not None
+        deck = DeckHandle(serial=self.cfg.serial)
+        deck.set_brightness(self.cfg.brightness)
+        deck.set_key_callback(self._on_key)
+        self.deck = deck
+        # Rebuild widget deps with the new key_size (in case it differs)
+        # and redraw the current page so the deck shows the right thing.
+        self._build_active_page()
 
     def _dim_loop(self) -> None:
         """Drop brightness when idle for `idle_dim_seconds`. Wakes on key press.
@@ -281,8 +346,9 @@ def main() -> int:
     # PIL spams per-PNG decoder debug lines; never interesting.
     logging.getLogger("PIL").setLevel(logging.INFO)
 
-    Daemon(Path(args.config_dir)).start()
-    return 0
+    daemon = Daemon(Path(args.config_dir))
+    daemon.start()
+    return daemon._exit_code
 
 
 if __name__ == "__main__":

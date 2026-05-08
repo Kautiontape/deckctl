@@ -15,6 +15,7 @@ class PageWidget:
         self.icon: str | None = settings.get("icon")
         self.label: str | None = settings.get("label")
         self.target: str = settings["target"]
+        self.on_long_press_action: str | None = settings.get("on_long_press")
         self._deps = deps
         self.invalidate = None
 
@@ -31,5 +32,7 @@ class PageWidget:
         execute(f"page:{self.target}", ctx)
 
     def on_long_press(self, ctx) -> None:
-        # Default: same as press. Could be customized later.
+        if self.on_long_press_action:
+            execute(self.on_long_press_action, ctx)
+            return
         self.on_press(ctx)
