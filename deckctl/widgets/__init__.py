@@ -13,12 +13,14 @@ if TYPE_CHECKING:
     from ..icons import IconResolver
     from ..services.bluez import BluezService
     from ..services.ha import HAService
+    from ..services.idle_inhibit import IdleInhibitService
     from ..services.marks import MarksService
     from ..services.mpris import MprisService
     from ..services.pipewire import PipewireService
     from ..services.producers import Producer
     from ..services.subsonic import SubsonicService
     from ..services.sway import SwayService
+    from ..services.swaync import SwayncService
 
 
 @dataclass
@@ -34,6 +36,8 @@ class WidgetDeps:
     bluez: "BluezService | None" = None
     subsonic: "SubsonicService | None" = None
     sway: "SwayService | None" = None
+    swaync: "SwayncService | None" = None
+    inhibit: "IdleInhibitService | None" = None
     # Dynamic-list producers, keyed by name (e.g. "audio_sink", "bluez").
     # ActivePage looks them up to expand `type = "dynamic"` keys.
     producers: "dict[str, Producer] | None" = None
@@ -77,6 +81,7 @@ from . import bluez as _bluez  # noqa: E402, F401
 from . import command as _command  # noqa: E402, F401
 from . import ha_action as _ha_action  # noqa: E402, F401
 from . import ha_toggle as _ha_toggle  # noqa: E402, F401
+from . import idle_inhibit as _idle_inhibit  # noqa: E402, F401
 from . import mic_mute as _mic_mute  # noqa: E402, F401
 from . import mpris as _mpris  # noqa: E402, F401
 from . import mpris_loop as _mpris_loop  # noqa: E402, F401
@@ -88,6 +93,7 @@ from . import sway_mark as _sway_mark  # noqa: E402, F401
 from . import sway_mark_new as _sway_mark_new  # noqa: E402, F401
 from . import sway_window as _sway_window  # noqa: E402, F401
 from . import sway_workspace as _sway_workspace  # noqa: E402, F401
+from . import swaync_dnd as _swaync_dnd  # noqa: E402, F401
 from . import volume as _volume  # noqa: E402, F401
 from . import weather as _weather  # noqa: E402, F401
 from . import stubs as _stubs  # noqa: E402, F401  (registers leftover types)

@@ -16,6 +16,7 @@ from .deck import DeckHandle
 from .pages import ActivePage, PageStack, make_widget_deps
 from .services.bluez import BluezService
 from .services.ha import HAService
+from .services.idle_inhibit import IdleInhibitService
 from .services.marks import MarksService
 from .services.mpris import MprisService, start_glib_loop
 from .services.pipewire import PipewireService
@@ -28,6 +29,7 @@ from .services.producers import (
 from .services.recents import RecentsService
 from .services.subsonic import SubsonicService
 from .services.sway import SwayService
+from .services.swaync import SwayncService
 
 log = logging.getLogger("deckctl")
 
@@ -49,6 +51,8 @@ class Daemon:
         self.recents: RecentsService | None = None
         self.bluez: BluezService | None = None
         self.subsonic: SubsonicService | None = None
+        self.swaync: SwayncService | None = None
+        self.inhibit: IdleInhibitService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
         # 0 = normal shutdown; 1 = abnormal (watchdog set this when it gave
@@ -92,6 +96,12 @@ class Daemon:
         except Exception:
             log.exception("bluez init failed; bluetooth widgets will be inert")
             self.bluez = None
+        try:
+            self.swaync = SwayncService()
+        except Exception:
+            log.exception("swaync init failed; DND widget will be inert")
+            self.swaync = None
+        self.inhibit = IdleInhibitService()
         self.subsonic = SubsonicService(
             url=self.secrets.get("SUBSONIC_URL"),
             credential=self.secrets.get("SUBSONIC_CRED"),
@@ -242,6 +252,9 @@ class Daemon:
         if self.active is not None:
             self.active.dispose()
             self.active = None
+        if self.inhibit is not None:
+            # Don't leak the systemd-inhibit subprocess on exit.
+            self.inhibit.shutdown()
         if self.deck is not None:
             self.deck.close()
 
@@ -266,6 +279,8 @@ class Daemon:
         deps.bluez = self.bluez
         deps.subsonic = self.subsonic
         deps.sway = self.sway
+        deps.swaync = self.swaync
+        deps.inhibit = self.inhibit
         producers: dict[str, object] = {}
         if self.pipewire is not None:
             producers["audio_sink"] = AudioSinkProducer(self.pipewire)
