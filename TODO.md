@@ -107,32 +107,38 @@ Done since last:
 
 - [x] **Sway workspace indicator** on the Sway page. WS keys are now
       `sway_workspace` widgets that highlight live as you switch
-      workspaces. Tap moves the focused container; long-press switches
-      focus only.
-- [x] **Recents row** on Main. RecentsService tracks an MRU window
-      list via sway focus events; RecentsProducer feeds the dynamic
-      list. Skips the currently-focused window so the row shows the 4
-      "previous" windows. sway_window widget renders app icon +
-      truncated name; tap focuses the window.
+      workspaces.
 - [x] **Audio input picker.** Mic long-press → audio-in page mirroring
-      audio-out. Mic widget honors `on_long_press` from settings.
+      audio-out.
+- [x] **Disconnect watchdog.** DeckHandle.connected flips on HID error;
+      the deck-watchdog thread tries 3 reconnects and falls through to
+      a non-zero exit so systemd can restart us cleanly.
+- [~] **Recents row** built (RecentsService + RecentsProducer +
+      sway_window widget) but pulled from Main: focus_con's
+      "move to current workspace + float-enable" was disruptive across
+      tilings. Code stays in tree for a future revisit with a less
+      aggressive activation pattern (just `swaymsg workspace number N`
+      then focus, no move/float).
 
 Open / speculative:
 
-- [ ] State badges on `page` keys. Sub-pages would publish a state
-      (count, alert flag, "active" hint); page widgets render a small
-      overlay (dot, count badge) reflecting it. Useful e.g. for a "BT 2"
-      indicator on Main, or a "marks: 5" hint. Needs concrete use cases
-      to design well.
-- [ ] Hot-reload of icon theme. Low value — the index rebuild on SIGHUP
-      already covers icon-dir changes; this would only help if the user
-      wants live theme switching mid-session.
-- [ ] `dbus:` action prefix. Currently we shell to `dbus-send` for the
-      Open Feishin button. A native `dbus:bus:path:method` action prefix
-      would be cleaner and faster but isn't pressing.
-- [ ] Recents backfill at daemon start. Currently the row is empty
-      until you focus a few windows; could walk the sway tree at start
-      to seed it (ordering would be arbitrary but better than blank).
+- [ ] **HA toggle widget + SSE.** Deck buttons that control an HA entity
+      AND reflect its state (e.g. office light shows on/off). Needs:
+      (1) ha_toggle widget reading state, rendering icon per state,
+      tapping calls toggle service; (2) HAService.subscribe via SSE
+      `/api/stream` so the button updates when changed elsewhere.
+      Highest-value remaining item — your HA has 23 lights + 52
+      switches.
+- [ ] State badges on `page` keys. e.g. BT button shows "2" when 2
+      devices are connected, marks button shows count of filled slots.
+      Concrete use cases: BT count, marks count, audio-out current sink
+      name. Worth doing once we know which feel useful.
+- [ ] `dbus:` action prefix. We shell to `dbus-send` for the Open
+      Feishin button. A native `dbus:bus:path:method` action prefix
+      would be cleaner.
+- [ ] Hot-reload of icon theme. Low value.
+- [ ] Recents backfill from sway tree at daemon start (only relevant
+      if the recents row comes back).
 
 ## Smoke testing
 
