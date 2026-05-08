@@ -25,16 +25,13 @@ label = "Next"
 on_press = "playerctl --player=Feishin next"
 on_long_press = "playerctl --player=Feishin previous"
 
-# Audio output picker. Long-press → Bluetooth, mirroring the Mic key's
-# short=mute / long=audio-in pattern. Keeps Main compact: tap for the
-# common case (switch sink), hold for the rare one (manage BT).
+# Audio output picker.
 [[keys]]
 pos = [3, 0]
 type = "page"
 target = "audio-out"
 icon = "audio-headphones"
 label = "Out"
-on_long_press = "page:bluetooth"
 
 # Mic mute on tap; long-press opens the input picker.
 [[keys]]
@@ -42,9 +39,14 @@ pos = [4, 0]
 type = "mic_mute"
 on_long_press = "page:audio-in"
 
-# Row 1 — intentionally empty. Volume keys are on a separate hardware
-# device; recents was tried but the focus-stealing was disruptive and
-# the icon flux made Main feel cluttered.
+# Row 1 — Bluetooth on the right; the rest is open space for future
+# additions. Volume keys live on a separate hardware device.
+[[keys]]
+pos = [4, 1]
+type = "page"
+target = "bluetooth"
+icon = "bluetooth"
+label = "BT"
 
 # Row 2
 [[keys]]
