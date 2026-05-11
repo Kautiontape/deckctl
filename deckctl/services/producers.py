@@ -108,24 +108,33 @@ class RecentsProducer:
 
 
 class BluezProducer:
-    """Lists paired Bluetooth devices with their connect state."""
+    """Lists Bluetooth devices: paired always, plus discovered unpaired
+    ones while a scan is in progress."""
 
     def __init__(self, bluez: "BluezService"):
         self.bluez = bluez
 
     def items(self) -> list[ProducerItem]:
-        return [
-            ProducerItem(
-                widget_type="bluez",
-                settings={
-                    "path": d["path"],
-                    "name": d["name"],
-                    "icon": d["icon"],
-                    "connected": d["connected"],
-                },
-            )
-            for d in self.bluez.paired_devices()
-        ]
+        scanning = self.bluez.discovering
+        out: list[ProducerItem] = []
+        for d in self.bluez.devices():
+            if not d["paired"] and not scanning:
+                continue
+            settings: dict = {
+                "path": d["path"],
+                "name": d["name"],
+                "icon": d["icon"],
+                "connected": d["connected"],
+                "paired": d["paired"],
+            }
+            # Forget is destructive — gate it behind a 1s hold (the page
+            # renderer also opts the key into the progress-arc animation
+            # when long_press_ms is set). Unpaired entries don't have a
+            # meaningful long-press action, so leave them on the default.
+            if d["paired"]:
+                settings["long_press_ms"] = 1000
+            out.append(ProducerItem(widget_type="bluez", settings=settings))
+        return out
 
     def subscribe(self, cb: Callable[[], None]) -> Callable[[], None]:
         return self.bluez.subscribe(cb)

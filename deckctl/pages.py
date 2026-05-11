@@ -106,14 +106,33 @@ class ActivePage:
         # Dynamic regions: each holds its own producer subscription and
         # tracks which indices it currently owns so it can rebuild.
         self._regions: list[_DynamicRegion] = []
+        self._regions_by_name: dict[str, _DynamicRegion] = {}
 
+        # Expose the active page on deps so region-aware widgets (e.g.
+        # `dynamic_page` pagers) can look up their target region. deps is
+        # shared across pages — the previous page's widgets are disposed
+        # before we get here, so it's safe to overwrite.
+        deps.active_page = self  # type: ignore[attr-defined]
+
+        # Two-pass build: regions first so name lookups resolve regardless
+        # of TOML order, then everything else.
+        region_keys: list[KeyDef] = []
+        other_keys: list[KeyDef] = []
         for kdef in page.keys:
-            if kdef.type == "dynamic":
-                region = _DynamicRegion(kdef, self)
-                self._regions.append(region)
-                region.expand()
-                continue
+            (region_keys if kdef.type == "dynamic" else other_keys).append(kdef)
+
+        for kdef in region_keys:
+            region = _DynamicRegion(kdef, self)
+            self._regions.append(region)
+            if region.name:
+                self._regions_by_name[region.name] = region
+            region.expand()
+
+        for kdef in other_keys:
             self._add_widget(kdef)
+
+    def get_region(self, name: str) -> "_DynamicRegion | None":
+        return self._regions_by_name.get(name)
 
     def _add_widget(self, kdef: KeyDef) -> int | None:
         col, row = kdef.pos
@@ -284,6 +303,7 @@ class _DynamicRegion:
     def __init__(self, kdef: KeyDef, page: "ActivePage"):
         self.kdef = kdef
         self.page = page
+        self.name: str = str(kdef.settings.get("name", ""))
         producer_name = kdef.settings.get("producer", "")
         producers = getattr(page._deps, "producers", None) or {}
         self.producer = producers.get(producer_name)
@@ -296,8 +316,54 @@ class _DynamicRegion:
         self.start_col, self.start_row = kdef.pos
         self.indices: list[int] = []
         self._unsub = None
+        # Pagination state. `page_num` is 0-indexed; `_total_items` is the
+        # last-seen producer count (used to derive total_pages without
+        # re-querying).
+        self._page_num: int = 0
+        self._total_items: int = 0
+        self._region_subs: list[Callable[[], None]] = []
         if self.producer is not None:
             self._unsub = self.producer.subscribe(self._on_change)
+
+    @property
+    def page_num(self) -> int:
+        return self._page_num
+
+    @property
+    def total_pages(self) -> int:
+        n = max(0, self._total_items)
+        slot_count = len(self._slot_indices())
+        if slot_count <= 0:
+            return 1
+        return max(1, (n + slot_count - 1) // slot_count)
+
+    def go_to_page(self, p: int) -> None:
+        target = max(0, min(p, self.total_pages - 1))
+        if target == self._page_num:
+            return
+        for idx in list(self.indices):
+            self.page._remove_widget(idx)
+        self.indices.clear()
+        self._page_num = target
+        self.expand()
+
+    def subscribe(self, cb: Callable[[], None]) -> Callable[[], None]:
+        self._region_subs.append(cb)
+
+        def unsub() -> None:
+            try:
+                self._region_subs.remove(cb)
+            except ValueError:
+                pass
+
+        return unsub
+
+    def _fire_region(self) -> None:
+        for cb in list(self._region_subs):
+            try:
+                cb()
+            except Exception:
+                log.exception("dynamic region subscriber raised")
 
     def _slot_indices(self) -> list[int]:
         """All positions this region MAY occupy (row-wrapping at deck width)."""
@@ -311,7 +377,8 @@ class _DynamicRegion:
         return out
 
     def expand(self) -> None:
-        """Build widgets for the current items. Push images for changed slots."""
+        """Build widgets for the current page's slice. Push images for
+        changed slots."""
         if self.producer is None:
             return
         try:
@@ -320,9 +387,19 @@ class _DynamicRegion:
             log.exception("dynamic: producer %r .items() raised", self.kdef.settings)
             items = []
 
+        self._total_items = len(items)
+        # Clamp the current page if items have shrunk below our window.
+        max_page = self.total_pages - 1
+        if self._page_num > max_page:
+            self._page_num = max_page
+
         slot_indices = self._slot_indices()
+        page_size = len(slot_indices)
+        start = self._page_num * page_size
+        page_items = items[start : start + page_size]
+
         new_indices: list[int] = []
-        for idx, item in zip(slot_indices, items):
+        for idx, item in zip(slot_indices, page_items):
             kdef = KeyDef(
                 pos=(idx % self.page.cols, idx // self.page.cols),
                 type=item.widget_type,
@@ -350,6 +427,8 @@ class _DynamicRegion:
                 if idx not in new_indices:
                     self.page._push(idx, None)
 
+        self._fire_region()
+
     def _on_change(self) -> None:
         # Tear down current widgets, then re-expand. Both happen on the
         # producer's dispatch thread, which is fine — set_key_image is
@@ -363,6 +442,7 @@ class _DynamicRegion:
         if self._unsub is not None:
             self._unsub()
             self._unsub = None
+        self._region_subs.clear()
 
 
 def make_widget_deps(deck_cfg: DeckConfig, key_size: tuple[int, int]) -> WidgetDeps:

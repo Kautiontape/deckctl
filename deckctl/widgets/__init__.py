@@ -11,6 +11,7 @@ from ..config import KeyDef
 
 if TYPE_CHECKING:
     from ..icons import IconResolver
+    from ..pages import ActivePage
     from ..services.bluez import BluezService
     from ..services.ha import HAService
     from ..services.idle_inhibit import IdleInhibitService
@@ -41,6 +42,11 @@ class WidgetDeps:
     # Dynamic-list producers, keyed by name (e.g. "audio_sink", "bluez").
     # ActivePage looks them up to expand `type = "dynamic"` keys.
     producers: "dict[str, Producer] | None" = None
+    # The currently-rendering page. Set by ActivePage at construction so
+    # region-aware widgets (e.g. `dynamic_page` pagers) can resolve their
+    # target region by name. Mutated per page, but the previous page's
+    # widgets are disposed before this is overwritten.
+    active_page: "ActivePage | None" = None
 
 
 class Widget(Protocol):
@@ -79,6 +85,7 @@ from . import audio_sink as _audio_sink  # noqa: E402, F401
 from . import audio_source as _audio_source  # noqa: E402, F401
 from . import bluez as _bluez  # noqa: E402, F401
 from . import command as _command  # noqa: E402, F401
+from . import dynamic_page as _dynamic_page  # noqa: E402, F401
 from . import ha_action as _ha_action  # noqa: E402, F401
 from . import ha_toggle as _ha_toggle  # noqa: E402, F401
 from . import idle_inhibit as _idle_inhibit  # noqa: E402, F401
