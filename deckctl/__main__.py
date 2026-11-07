@@ -33,6 +33,10 @@ from .services.swaync import SwayncService
 
 log = logging.getLogger("deckctl")
 
+# Presses this soon after a page is drawn are dropped, so a key bounce or a
+# press made during the redraw can't act on a page that wasn't on screen yet.
+PAGE_SETTLE_SECONDS = 0.2
+
 
 class Daemon:
     def __init__(self, config_dir: Path):
@@ -62,6 +66,8 @@ class Daemon:
         self._last_activity = 0.0
         self._dimmed = False
         self._dimmer_thread: threading.Thread | None = None
+        # When the current page finished drawing; see PAGE_SETTLE_SECONDS.
+        self._page_drawn_at = 0.0
 
     # ─── lifecycle ────────────────────────────────────────────────────────
 
@@ -314,12 +320,14 @@ class Daemon:
         self.page_stack = PageStack(self.pages, self.cfg, on_change=on_change)
 
     def _draw_active(self) -> None:
+        import time
         assert self.deck is not None and self.active is not None
         # Blank everything first so stale keys from a deeper page don't linger.
         for i in range(self.deck.key_count):
             self.deck.set_key_image(i, None)
         for idx, image in self.active.render().items():
             self.deck.set_key_image(idx, image)  # type: ignore[arg-type]
+        self._page_drawn_at = time.monotonic()
 
     def _on_key(self, idx: int, pressed: bool) -> None:
         import time
@@ -336,6 +344,10 @@ class Daemon:
         if self.active is None or self.page_stack is None:
             return
         if pressed:
+            since_draw = time.monotonic() - self._page_drawn_at
+            if since_draw < PAGE_SETTLE_SECONDS:
+                log.info("dropped key %d, %d ms after page draw", idx, since_draw * 1000)
+                return
             self.active.handle_press(idx)
         else:
             ctx = ActionContext(page_stack=self.page_stack, secrets=self.secrets)

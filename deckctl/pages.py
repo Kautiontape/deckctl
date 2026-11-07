@@ -241,12 +241,13 @@ class ActivePage:
         had_animation = stop is not None
         if stop is not None:
             stop.set()
+        # No press here: it was dropped, or it began on the previous page.
+        if started is None:
+            return
         widget = self.widgets.get(idx)
         if widget is None:
             return
-        held_ms = (
-            int((time.monotonic() - started) * 1000) if started is not None else 0
-        )
+        held_ms = int((time.monotonic() - started) * 1000)
         threshold = self.long_press_ms.get(idx, self.long_press_default_ms)
         try:
             if held_ms >= threshold:
@@ -258,7 +259,9 @@ class ActivePage:
         # Only restore the widget's base render if we'd actually drawn an
         # arc on top — otherwise the deck already shows the right image
         # and the extra push is wasted (and could flicker reactive widgets).
-        if had_animation and self._push is not None:
+        # A page change disposes this page and empties `widgets`; pushing then
+        # would paint this key onto the new page.
+        if had_animation and self._push is not None and self.widgets.get(idx) is widget:
             try:
                 self._push(idx, widget.render())
             except Exception:
