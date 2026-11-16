@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ..icons import IconResolver
     from ..pages import ActivePage
     from ..services.bluez import BluezService
+    from ..services.color_scheme import ColorSchemeService
     from ..services.ha import HAService
     from ..services.idle_inhibit import IdleInhibitService
     from ..services.marks import MarksService
@@ -39,6 +40,7 @@ class WidgetDeps:
     sway: "SwayService | None" = None
     swaync: "SwayncService | None" = None
     inhibit: "IdleInhibitService | None" = None
+    color_scheme: "ColorSchemeService | None" = None
     # Dynamic-list producers, keyed by name (e.g. "audio_sink", "bluez").
     # ActivePage looks them up to expand `type = "dynamic"` keys.
     producers: "dict[str, Producer] | None" = None
@@ -84,6 +86,7 @@ def build(key: KeyDef, deps: WidgetDeps) -> Widget:
 from . import audio_sink as _audio_sink  # noqa: E402, F401
 from . import audio_source as _audio_source  # noqa: E402, F401
 from . import bluez as _bluez  # noqa: E402, F401
+from . import color_scheme as _color_scheme  # noqa: E402, F401
 from . import command as _command  # noqa: E402, F401
 from . import dynamic_page as _dynamic_page  # noqa: E402, F401
 from . import ha_action as _ha_action  # noqa: E402, F401

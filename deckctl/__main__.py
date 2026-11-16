@@ -30,6 +30,7 @@ from .services.recents import RecentsService
 from .services.subsonic import SubsonicService
 from .services.sway import SwayService
 from .services.swaync import SwayncService
+from .services.color_scheme import ColorSchemeService
 
 log = logging.getLogger("deckctl")
 
@@ -57,6 +58,7 @@ class Daemon:
         self.subsonic: SubsonicService | None = None
         self.swaync: SwayncService | None = None
         self.inhibit: IdleInhibitService | None = None
+        self.color_scheme: ColorSchemeService | None = None
         self._stop = threading.Event()
         self._reload_lock = threading.Lock()
         # 0 = normal shutdown; 1 = abnormal (watchdog set this when it gave
@@ -108,6 +110,11 @@ class Daemon:
             log.exception("swaync init failed; DND widget will be inert")
             self.swaync = None
         self.inhibit = IdleInhibitService()
+        try:
+            self.color_scheme = ColorSchemeService()
+        except Exception:
+            log.exception("color_scheme init failed; dark-mode widget will be inert")
+            self.color_scheme = None
         self.subsonic = SubsonicService(
             url=self.secrets.get("SUBSONIC_URL"),
             credential=self.secrets.get("SUBSONIC_CRED"),
@@ -287,6 +294,7 @@ class Daemon:
         deps.sway = self.sway
         deps.swaync = self.swaync
         deps.inhibit = self.inhibit
+        deps.color_scheme = self.color_scheme
         producers: dict[str, object] = {}
         if self.pipewire is not None:
             producers["audio_sink"] = AudioSinkProducer(self.pipewire)
